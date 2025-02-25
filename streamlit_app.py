@@ -24,18 +24,33 @@ view_state = pdk.ViewState(
 )
 
 # 🗺️ Mapbox Terrain Layer
+# terrain_layer = pdk.Layer(
+#     "TerrainLayer",
+#     data=[],
+#     elevation_data="mapbox://mapbox.terrain-rgb",
+#     texture="mapbox://mapbox.satellite",
+#     elevation_decoder={
+#         "rScaler": 65536,  # Previously 256
+#         "gScaler": 256, 
+#         "bScaler": 1, 
+#         "offset": -10000  # Previously -32768
+#     },
+#     bounds=[longitude - 0.1, latitude - 0.1, longitude + 0.1, latitude + 0.1],
+# )
+
+# Pydeck Terrain Layer
 terrain_layer = pdk.Layer(
     "TerrainLayer",
     data=[],
-    elevation_data="mapbox://mapbox.terrain-rgb",
-    texture="mapbox://mapbox.satellite",
+    elevation_data="https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
     elevation_decoder={
-        "rScaler": 65536,  # Previously 256
-        "gScaler": 256, 
-        "bScaler": 1, 
-        "offset": -10000  # Previously -32768
+        "rScaler": 256,
+        "gScaler": 1,
+        "bScaler": 1/256,
+        "offset": -32768,
     },
-    bounds=[longitude - 0.1, latitude - 0.1, longitude + 0.1, latitude + 0.1],
+    bounds=[west, south, east, north],
+    material={"ambient": 0.5, "diffuse": 0.6, "shininess": 10, "specularColor": [255, 255, 255]},
 )
 
 # # 🏔️ Render in Streamlit
@@ -54,3 +69,4 @@ st.pydeck_chart(pdk.Deck(
     map_provider="carto",  # ✅ Switch from Mapbox to Carto
     map_style="road"  # Default styling for debugging
 ))
+
