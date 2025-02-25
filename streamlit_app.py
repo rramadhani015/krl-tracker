@@ -6,7 +6,7 @@ from rasterio.plot import show
 from io import BytesIO
 import requests
 from PIL import Image
-
+# hmm
 # Define the URL for AWS Terrarium DEM (Example: Indonesia Region)
 TERRAIN_URL = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
 
