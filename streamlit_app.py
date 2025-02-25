@@ -32,4 +32,28 @@ terrain_layer = pdk.Layer(
         "rScaler": 65536,
         "gScaler": 256,
         "bScaler": 1,
-        "off
+        "offset": 0
+    },
+    elevation_data=f"https://api.mapbox.com/v4/mapbox.terrain-rgb/{{z}}/{{x}}/{{y}}.pngraw?access_token={MAPBOX_TOKEN}",
+    color_ramp=color_ramp,  # Apply the color ramp instead of basemap
+    bounds=[longitude - 1, latitude - 1, longitude + 1, latitude + 1],
+)
+
+# 🗺️ View Configuration
+view_state = pdk.ViewState(
+    longitude=longitude,
+    latitude=latitude,
+    zoom=zoom,
+    pitch=60,
+    bearing=30,
+    min_zoom=5,
+    max_zoom=15
+)
+
+# 🗺️ Render 3D Terrain in Streamlit
+st.pydeck_chart(pdk.Deck(
+    layers=[terrain_layer],
+    initial_view_state=view_state,
+    map_style=None,  # No basemap
+    api_keys={"mapbox": MAPBOX_TOKEN}
+))
