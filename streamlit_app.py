@@ -1,69 +1,36 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import rasterio
-import pydeck as pdk
 import streamlit as st
-from io import BytesIO
-import requests
-from PIL import Image
+import pydeck as pdk
 
-# Define the URL for AWS Terrarium DEM (Example: Indonesia Region)
-TERRAIN_URL = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
+# Mapbox Access Token (Replace with your own)
+MAPBOX_API_KEY = "pk.eyJ1IjoicmFtYWRoYW5pMDE1IiwiYSI6ImNtN2p6N21oaDBhaDcyanMzMHRiNjJsOTEifQ.tS3O3ERXLBjrqlfYep2OLQ"
 
-# Define the color ramp using Matplotlib colormap
-COLORMAP = plt.get_cmap("terrain")  # You can also try "viridis", "plasma", etc.
+# Define the viewport for the map
+view = pdk.ViewState(
+    latitude=32.7213,  # Example location
+    longitude=-114.26608,
+    zoom=12,
+    pitch=60,  # Tilt for 3D effect
+    bearing=0
+)
 
-def fetch_terrain_tile(z, x, y):
-    """Fetches a terrain RGB tile from AWS Terrarium."""
-    url = TERRAIN_URL.format(z=z, x=x, y=y)
-    response = requests.get(url)
-    if response.status_code == 200:
-        return Image.open(BytesIO(response.content))
-    else:
-        print("Failed to fetch terrain tile")
-        return None
+# Define the terrain layer using Mapbox DEM Raster Tiles
+terrain_layer = pdk.Layer(
+    "TerrainLayer",
+    data=None,  # No input data required for raster layers
+    elevation_decoder={"rScaler": 256, "gScaler": 1, "bScaler": 1 / 256, "offset": -32768},
+    elevation_data="mapbox://mapbox.mapbox-terrain-dem-v1",
+    texture="https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/{z}/{x}/{y}?access_token=" + MAPBOX_API_KEY,
+    bounds=[-115, 32, -113, 34],  # Define bounding box for visualization
+    material={"ambient": 0.5, "diffuse": 0.5, "shininess": 0.5, "specularColor": [255, 255, 255]},
+)
 
-def convert_rgb_to_elevation(img):
-    """Converts a terrain RGB image to elevation values."""
-    img = np.array(img, dtype=np.float32)  # Ensure correct dtype
-    r, g, b = img[:, :, 0], img[:, :, 1], img[:, :, 2]
-    elevation = (r * 256 + g + b / 256) - 32768
-    return elevation
+# Create the deck with the terrain layer
+deck = pdk.Deck(
+    layers=[terrain_layer],
+    initial_view_state=view,
+    map_provider="mapbox",
+    map_style="mapbox://styles/mapbox/satellite-streets-v12",
+)
 
-def apply_colormap(elevation):
-    """Applies a colormap to the elevation data."""
-    norm_elevation = (elevation - np.min(elevation)) / (np.max(elevation) - np.min(elevation))
-    colored = COLORMAP(norm_elevation)
-    return (colored[:, :, :3] * 255).astype(np.uint8)  # Convert to 8-bit RGB
-
-# Fetch and process a tile
-z, x, y = 6, 55, 32  # Example tile coordinates
-terrain_tile = fetch_terrain_tile(z, x, y)
-
-if terrain_tile:
-    elevation = convert_rgb_to_elevation(terrain_tile)
-    colored_tile = apply_colormap(elevation)
-    colored_image = Image.fromarray(colored_tile)
-
-    # Convert to BytesIO for in-memory processing
-    img_buffer = BytesIO()
-    colored_image.save(img_buffer, format="PNG")
-    img_buffer.seek(0)
-
-    # Display the processed image in Streamlit
-    st.image(colored_image, caption="Colored Terrain Image", use_column_width=True)
-
-    # Pydeck visualization
-    view = pdk.ViewState(latitude=-2.5, longitude=117.5, zoom=4, pitch=60)
-    
-    layer = pdk.Layer(
-        "BitmapLayer",
-        data=None,
-        image=img_buffer,  # Pass the in-memory image
-        bounds=[113, -5, 122, 0],  # Example bounding box for Indonesia
-    )
-    
-    deck = pdk.Deck(layers=[layer], initial_view_state=view)
-
-    # Display Pydeck visualization inside Streamlit
-    st.pydeck_chart(deck)
+# Display in Streamlit
+st.pydeck_chart(deck)
