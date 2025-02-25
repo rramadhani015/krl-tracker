@@ -34,7 +34,7 @@ terrain_layer = pdk.Layer(
         "gScaler": 256, 
         "bScaler": 1, 
         "offset": -10000  # Previously -32768
-    }
+    },
     bounds=[longitude - 0.1, latitude - 0.1, longitude + 0.1, latitude + 0.1],
 )
 
