@@ -121,26 +121,27 @@ view_state = pdk.ViewState(
 )
 
 # 🗺️ Mapbox Terrain Layer
-# terrain_layer = pdk.Layer(
-#     "TerrainLayer",
-#     data=[],
-#     elevation_data="mapbox://mapbox.terrain-rgb",
-#     texture="mapbox://mapbox.satellite",
-#     elevation_decoder={
-#         "rScaler": 256,
-#         "gScaler": 1,
-#         "bScaler": 1/256,
-#         "offset": -32768,
-#     },
-#     bounds=[longitude - 0.1, latitude - 0.1, longitude + 0.1, latitude + 0.1],
-# )
+terrain_layer = pdk.Layer(
+    "TerrainLayer",
+    data=[],
+    # elevation_data="mapbox://mapbox.terrain-rgb",
+    elevation_data="https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
+    # texture="mapbox://mapbox.satellite",
+    elevation_decoder={
+        "rScaler": 256,
+        "gScaler": 1,
+        "bScaler": 1/256,
+        "offset": -32768,
+    },
+    bounds=[longitude - 0.1, latitude - 0.1, longitude + 0.1, latitude + 0.1],
+)
 
-# # 🏔️ Render in Streamlit
-# st.pydeck_chart(pdk.Deck(
-#     layers=[terrain_layer],
-#     initial_view_state=view_state,
-#     map_provider="mapbox",
-#     map_style="mapbox://styles/mapbox/satellite-streets-v11",
-#     api_keys={"mapbox": MAPBOX_TOKEN},
-# ))
+# 🏔️ Render in Streamlit
+st.pydeck_chart(pdk.Deck(
+    layers=[terrain_layer],
+    initial_view_state=view_state,
+    map_provider="mapbox",
+    map_style="mapbox://styles/mapbox/satellite-streets-v11",
+    api_keys={"mapbox": MAPBOX_TOKEN},
+))
 
