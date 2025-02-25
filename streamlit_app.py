@@ -31,7 +31,7 @@ body { margin: 0; padding: 0; }
 <div id="map"></div>
 
 <script>
-	mapboxgl.accessToken = ''{MAPBOX_TOKEN}'';
+	mapboxgl.accessToken = 'pk.eyJ1IjoicmFtYWRoYW5pMDE1IiwiYSI6ImNtN2p6N21oaDBhaDcyanMzMHRiNjJsOTEifQ.tS3O3ERXLBjrqlfYep2OLQ';
     const map = new mapboxgl.Map({
         container: 'map',
         zoom: 14,
