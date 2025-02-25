@@ -46,7 +46,7 @@ st.pydeck_chart(pdk.Deck(
     initial_view_state=view_state,
     map_provider="mapbox",
     map_style="mapbox://styles/mapbox/satellite-streets-v11",  # 🛰️ Use Mapbox Satellite Terrain
-    mapbox_key=MAPBOX_TOKEN  # ✅ Ensure Mapbox API Key is included
+    # mapbox_key=MAPBOX_TOKEN  # ✅ Ensure Mapbox API Key is included
 ))
 
 
