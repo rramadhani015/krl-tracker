@@ -49,7 +49,7 @@ body { margin: 0; padding: 0; }
             'tileSize': 512,
             'maxzoom': 14
         });
-        # <!-- add the DEM source as a terrain layer with exaggerated height -->
+        
         map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
     });
 </script>
