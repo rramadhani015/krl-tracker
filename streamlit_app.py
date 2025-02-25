@@ -30,11 +30,11 @@ terrain_layer = pdk.Layer(
     elevation_data="mapbox://mapbox.terrain-rgb",
     texture="mapbox://mapbox.satellite",
     elevation_decoder={
-        "rScaler": 256,
-        "gScaler": 1,
-        "bScaler": 1/256,
-        "offset": -32768,
-    },
+        "rScaler": 65536,  # Previously 256
+        "gScaler": 256, 
+        "bScaler": 1, 
+        "offset": -10000  # Previously -32768
+    }
     bounds=[longitude - 0.1, latitude - 0.1, longitude + 0.1, latitude + 0.1],
 )
 
