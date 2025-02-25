@@ -1,38 +1,44 @@
 import streamlit as st
 import pydeck as pdk
 
-# 🔑 Your Mapbox API Key
-MAPBOX_TOKEN = "your_actual_mapbox_api_key"
+# 🔑 Your Mapbox API Key (replace with your real key)
+MAPBOX_TOKEN = "pk.eyJ1IjoicmFtYWRoYW5pMDE1IiwiYSI6ImNtN2p6N21oaDBhaDcyanMzMHRiNjJsOTEifQ.tS3O3ERXLBjrqlfYep2OLQ"
 
-# 📌 Select a test location
-regions = {
-    "Mount Merapi": [110.44, -7.54, 10],  
-    "Mount Bromo": [112.95, -7.92, 11],
-    "Jakarta": [106.85, -6.2, 10]
+# 📌 Define locations with lat, lon, and zoom levels
+locations = {
+    "Mount Merapi, Indonesia": [110.44, -7.54, 10],
+    "Mount Bromo, Indonesia": [112.95, -7.92, 11],
+    "Jakarta, Indonesia": [106.85, -6.2, 10]
 }
-selected_region = st.selectbox("Select a region:", list(regions.keys()))
-longitude, latitude, zoom = regions[selected_region]
 
-# 🏔️ Pydeck 3D Terrain Layer
+# 🌍 Select a location
+selected_location = st.selectbox("Choose a location:", list(locations.keys()))
+longitude, latitude, zoom = locations[selected_location]
+
+# 🏔️ Pydeck TerrainLayer (Full 3D)
 terrain_layer = pdk.Layer(
     "TerrainLayer",
     elevation_decoder={
-        "rScaler": 256, "gScaler": 256, "bScaler": 256, "offset": 0
+        "rScaler": 65536,  # Scale for red channel
+        "gScaler": 256,     # Scale for green channel
+        "bScaler": 1,       # Scale for blue channel
+        "offset": 0         # Offset for elevation values
     },
+    elevation_data=f"https://api.mapbox.com/v4/mapbox.terrain-rgb/{{z}}/{{x}}/{{y}}.pngraw?access_token={MAPBOX_TOKEN}",
     texture="https://basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png",
-    elevation_data="https://api.mapbox.com/v4/mapbox.terrain-rgb/{z}/{x}/{y}.pngraw?access_token=" + MAPBOX_TOKEN
+    bounds=[-180, -85.0511, 180, 85.0511]  # Global bounds
 )
 
-# 🗺️ Pydeck View
+# 🗺️ Pydeck View Configuration
 view_state = pdk.ViewState(
     longitude=longitude,
     latitude=latitude,
     zoom=zoom,
-    pitch=60,
+    pitch=60,  # Tilt for 3D effect
     bearing=30
 )
 
-# 🎨 Render the map in Streamlit
+# 🗺️ Render 3D Terrain in Streamlit
 st.pydeck_chart(pdk.Deck(
     layers=[terrain_layer],
     initial_view_state=view_state,
