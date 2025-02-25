@@ -2,7 +2,7 @@ import streamlit as st
 import pydeck as pdk
 
 # 🔑 Enter your Mapbox token (replace with your actual token)
-MAPBOX_TOKEN = "pk.eyJ1IjoicmFtYWRoYW5pMDE1IiwiYSI6ImNpeHo1ZTU4eTAwNXAzM3J5YTB0cndteWIifQ.TfUY-zPT2r6bdci0vc7FCA"
+# MAPBOX_TOKEN = "pk.eyJ1IjoicmFtYWRoYW5pMDE1IiwiYSI6ImNpeHo1ZTU4eTAwNXAzM3J5YTB0cndteWIifQ.TfUY-zPT2r6bdci0vc7FCA"
 
 # 🔍 Select location
 regions = {
