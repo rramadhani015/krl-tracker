@@ -8,17 +8,19 @@ import pydeck as pdk
 # 🔑 Enter your Mapbox token (replace with your actual token)
 MAPBOX_TOKEN = "pk.eyJ1IjoicmFtYWRoYW5pMDE1IiwiYSI6ImNtN2p6N21oaDBhaDcyanMzMHRiNjJsOTEifQ.tS3O3ERXLBjrqlfYep2OLQ"
 
-# 🔍 Select location
+# 🔍 Select a test region
 regions = {
     "Mount Merapi": [110.44, -7.54],  # [Longitude, Latitude]
     "Mount Bromo": [112.95, -7.92],
     "Jakarta": [106.85, -6.2]
 }
-
 selected_region = st.selectbox("Select a region:", list(regions.keys()))
 longitude, latitude = regions[selected_region]
 
-# 📌 Define Pydeck Map
+# 🏔️ Mapbox Terrain-RGB API (Template URL)
+TERRAIN_URL = f"https://api.mapbox.com/v4/mapbox.terrain-rgb/{{z}}/{{x}}/{{y}}.pngraw?access_token={MAPBOX_TOKEN}"
+
+# 📌 Pydeck 3D View
 view_state = pdk.ViewState(
     longitude=longitude,
     latitude=latitude,
@@ -27,28 +29,24 @@ view_state = pdk.ViewState(
     bearing=0,
 )
 
-# 🗺️ Mapbox Terrain Layer
+# 🏔️ Mapbox Terrain Layer
 terrain_layer = pdk.Layer(
     "TerrainLayer",
     data=[],
-    # elevation_data="mapbox://mapbox.terrain-rgb",
-    elevation_data="https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
-    texture="mapbox://mapbox.satellite",
+    elevation_data=TERRAIN_URL,  # 🔥 Using Mapbox Terrain-RGB API
     elevation_decoder={
-        "rScaler": 256,
-        "gScaler": 1,
-        "bScaler": 1/256,
-        "offset": -32768,
+        "rScaler": 256, "gScaler": 1, "bScaler": 1/256, "offset": -32768  # Mapbox Terrain-RGB decoding
     },
-    bounds=[longitude - 0.1, latitude - 0.1, longitude + 0.1, latitude + 0.1],
+    bounds=[longitude - 1, latitude - 1, longitude + 1, latitude + 1],
 )
 
-# 🏔️ Render in Streamlit
+# 🌍 Render Mapbox 3D Terrain in Pydeck
 st.pydeck_chart(pdk.Deck(
     layers=[terrain_layer],
     initial_view_state=view_state,
     map_provider="mapbox",
-    map_style="mapbox://styles/mapbox/satellite-streets-v11",
-    api_keys={"mapbox": MAPBOX_TOKEN},
+    map_style="mapbox://styles/mapbox/satellite-streets-v11",  # 🛰️ Use Mapbox Satellite Terrain
+    mapbox_key=MAPBOX_TOKEN  # ✅ Ensure Mapbox API Key is included
 ))
+
 
