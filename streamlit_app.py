@@ -1,8 +1,12 @@
 import streamlit as st
 import pydeck as pdk
+import os
 
-# Mapbox Access Token (Replace with your own)
+# Define Mapbox API key
 MAPBOX_API_KEY = "pk.eyJ1IjoicmFtYWRoYW5pMDE1IiwiYSI6ImNtN2p6N21oaDBhaDcyanMzMHRiNjJsOTEifQ.tS3O3ERXLBjrqlfYep2OLQ"
+
+# Set Mapbox API key
+os.environ["MAPBOX_API_KEY"] = MAPBOX_API_KEY
 
 # Sidebar controls
 st.sidebar.header("Map Controls")
