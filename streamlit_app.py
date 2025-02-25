@@ -2,11 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import rasterio
 import pydeck as pdk
-from rasterio.plot import show
+import streamlit as st
 from io import BytesIO
 import requests
 from PIL import Image
-# hmm
+
 # Define the URL for AWS Terrarium DEM (Example: Indonesia Region)
 TERRAIN_URL = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
 
@@ -39,26 +39,31 @@ def apply_colormap(elevation):
 # Fetch and process a tile
 z, x, y = 6, 55, 32  # Example tile coordinates
 terrain_tile = fetch_terrain_tile(z, x, y)
+
 if terrain_tile:
     elevation = convert_rgb_to_elevation(terrain_tile)
     colored_tile = apply_colormap(elevation)
     colored_image = Image.fromarray(colored_tile)
-    
-    # Save the image or visualize it
-    colored_image.save("colored_terrain.png")
-    plt.imshow(colored_tile)
-    plt.axis("off")
-    plt.show()
-    
+
+    # Convert to BytesIO for in-memory processing
+    img_buffer = BytesIO()
+    colored_image.save(img_buffer, format="PNG")
+    img_buffer.seek(0)
+
+    # Display the processed image in Streamlit
+    st.image(colored_image, caption="Colored Terrain Image", use_column_width=True)
+
     # Pydeck visualization
     view = pdk.ViewState(latitude=-2.5, longitude=117.5, zoom=4, pitch=60)
     
     layer = pdk.Layer(
         "BitmapLayer",
         data=None,
-        image="colored_terrain.png",  # Load pre-colored terrain texture
+        image=img_buffer,  # Pass the in-memory image
         bounds=[113, -5, 122, 0],  # Example bounding box for Indonesia
     )
     
     deck = pdk.Deck(layers=[layer], initial_view_state=view)
-    deck.to_html("terrain_colormap.html")  # Export as interactive HTML
+
+    # Display Pydeck visualization inside Streamlit
+    st.pydeck_chart(deck)
