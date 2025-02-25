@@ -38,11 +38,19 @@ terrain_layer = pdk.Layer(
     bounds=[longitude - 0.1, latitude - 0.1, longitude + 0.1, latitude + 0.1],
 )
 
-# 🏔️ Render in Streamlit
+# # 🏔️ Render in Streamlit
+# st.pydeck_chart(pdk.Deck(
+#     layers=[terrain_layer],
+#     initial_view_state=view_state,
+#     map_provider="mapbox",
+#     map_style="mapbox://styles/mapbox/satellite-streets-v11",
+#     api_keys={"mapbox": MAPBOX_TOKEN},
+# ))
+
+# 🏔️ Render without mapbox in Streamlit
 st.pydeck_chart(pdk.Deck(
     layers=[terrain_layer],
     initial_view_state=view_state,
-    map_provider="mapbox",
-    map_style="mapbox://styles/mapbox/satellite-streets-v11",
-    api_keys={"mapbox": MAPBOX_TOKEN},
+    map_provider="carto",  # ✅ Switch from Mapbox to Carto
+    map_style="road"  # Default styling for debugging
 ))
