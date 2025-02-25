@@ -4,13 +4,19 @@ import pydeck as pdk
 # Mapbox Access Token (Replace with your own)
 MAPBOX_API_KEY = "pk.eyJ1IjoicmFtYWRoYW5pMDE1IiwiYSI6ImNtN2p6N21oaDBhaDcyanMzMHRiNjJsOTEifQ.tS3O3ERXLBjrqlfYep2OLQ"
 
+# Sidebar controls
+st.sidebar.header("Map Controls")
+zoom = st.sidebar.slider("Zoom", min_value=5, max_value=18, value=12, step=1)
+pitch = st.sidebar.slider("Pitch", min_value=0, max_value=85, value=60, step=5)
+bearing = st.sidebar.slider("Bearing", min_value=0, max_value=360, value=0, step=5)
+
 # Define the viewport for the map
 view = pdk.ViewState(
     latitude=32.7213,  # Example location
     longitude=-114.26608,
-    zoom=12,
-    pitch=60,  # Tilt for 3D effect
-    bearing=0
+    zoom=zoom,
+    pitch=pitch,
+    bearing=bearing
 )
 
 # Define the terrain layer using Mapbox DEM Raster Tiles
