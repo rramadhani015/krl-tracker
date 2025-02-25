@@ -1,7 +1,8 @@
 import streamlit as st
+import pydeck as pdk
 
 # 🔑 Your Mapbox API Key
-MAPBOX_TOKEN = "pk.eyJ1IjoicmFtYWRoYW5pMDE1IiwiYSI6ImNtN2p6N21oaDBhaDcyanMzMHRiNjJsOTEifQ.tS3O3ERXLBjrqlfYep2OLQ"
+MAPBOX_TOKEN = "your_actual_mapbox_api_key"
 
 # 📌 Select a test location
 regions = {
@@ -12,53 +13,29 @@ regions = {
 selected_region = st.selectbox("Select a region:", list(regions.keys()))
 longitude, latitude, zoom = regions[selected_region]
 
-# 📜 HTML + JS for Mapbox GL JS 3D Terrain
-map_html = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Mapbox GL JS 3D Terrain</title>
-    <script src="https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.js"></script>
-    <link href="https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.css" rel="stylesheet" />
-    <style>
-        body, html {{ margin: 0; padding: 0; height: 100%; }}
-        #map {{ width: 100%; height: 100vh; }}
-    </style>
-</head>
-<body>
-    <div id="map"></div>
-    <script>
-        mapboxgl.accessToken = '{MAPBOX_TOKEN}';
+# 🏔️ Pydeck 3D Terrain Layer
+terrain_layer = pdk.Layer(
+    "TerrainLayer",
+    elevation_decoder={
+        "rScaler": 256, "gScaler": 256, "bScaler": 256, "offset": 0
+    },
+    texture="https://basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png",
+    elevation_data="https://api.mapbox.com/v4/mapbox.terrain-rgb/{z}/{x}/{y}.pngraw?access_token=" + MAPBOX_TOKEN
+)
 
-        var map = new mapboxgl.Map({{
-            container: 'map',
-            style: 'mapbox://styles/mapbox/satellite-streets-v12',
-            center: [{longitude}, {latitude}],
-            zoom: {zoom},
-            pitch: 70,
-            bearing: 30,
-            antialias: true
-        }});
+# 🗺️ Pydeck View
+view_state = pdk.ViewState(
+    longitude=longitude,
+    latitude=latitude,
+    zoom=zoom,
+    pitch=60,
+    bearing=30
+)
 
-        map.on('style.load', function () {{
-            map.addSource('mapbox-dem', {{
-                "type": "raster-dem",
-                "url": "mapbox://mapbox.mapbox-terrain-dem-v1",
-                "tileSize": 512,
-                "maxzoom": 14
-            }});
-            
-            map.setTerrain({{
-                "source": "mapbox-dem",
-                "exaggeration": 1.5
-            }});
-        }});
-    </script>
-</body>
-</html>
-"""
-
-# 🏔️ Embed Mapbox GL JS into Streamlit
-st.components.v1.html(map_html, height=600)
+# 🎨 Render the map in Streamlit
+st.pydeck_chart(pdk.Deck(
+    layers=[terrain_layer],
+    initial_view_state=view_state,
+    map_style="mapbox://styles/mapbox/satellite-streets-v12",
+    api_keys={"mapbox": MAPBOX_TOKEN}
+))
