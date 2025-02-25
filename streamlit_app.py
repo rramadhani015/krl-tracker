@@ -18,7 +18,7 @@ terrain_layer = pdk.Layer(
     "TerrainLayer",
     data=None,  # No input data required for raster layers
     elevation_decoder={"rScaler": 256, "gScaler": 1, "bScaler": 1 / 256, "offset": -32768},
-    elevation_data="mapbox://mapbox.mapbox-terrain-dem-v1",
+    # elevation_data="mapbox://mapbox.mapbox-terrain-dem-v1",
     texture="https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/{z}/{x}/{y}?access_token=" + MAPBOX_API_KEY,
     bounds=[-115, 32, -113, 34],  # Define bounding box for visualization
     material={"ambient": 0.5, "diffuse": 0.5, "shininess": 0.5, "specularColor": [255, 255, 255]},
