@@ -25,7 +25,7 @@ terrain_layer = pdk.Layer(
     elevation_decoder={"rScaler": 256, "gScaler": 1, "bScaler": 1 / 256, "offset": -32768},
     # elevation_data="mapbox://mapbox.mapbox-terrain-dem-v1",
     # elevation_data="https://api.mapbox.com/v4/mapbox.terrain-rgb/{zoom}/{x}/{y}{@2x}.pngraw?access_token="+ MAPBOX_API_KEY,
-    elevation_data="https://api.mapbox.com/v4/mapbox.terrain-rgb/10/854/396.pngraw?access_token=pk.eyJ1IjoicmFtYWRoYW5pMDE1IiwiYSI6ImNtN2p6N21oaDBhaDcyanMzMHRiNjJsOTEifQ.tS3O3ERXLBjrqlfYep2OLQ,
+    elevation_data="https://api.mapbox.com/v4/mapbox.terrain-rgb/10/854/396.pngraw?access_token=pk.eyJ1IjoicmFtYWRoYW5pMDE1IiwiYSI6ImNtN2p6N21oaDBhaDcyanMzMHRiNjJsOTEifQ.tS3O3ERXLBjrqlfYep2OLQ",
     # https://api.mapbox.com/v4/mapbox.terrain-rgb/10/854/396.pngraw?access_token=pk.eyJ1IjoicmFtYWRoYW5pMDE1IiwiYSI6ImNtN2p6N21oaDBhaDcyanMzMHRiNjJsOTEifQ.tS3O3ERXLBjrqlfYep2OLQ
     texture="https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/{z}/{x}/{y}?access_token=" + MAPBOX_API_KEY,
     exaggeration=1.5,
