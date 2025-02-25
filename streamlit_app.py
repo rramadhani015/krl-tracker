@@ -15,29 +15,38 @@ locations = {
 selected_location = st.selectbox("Choose a location:", list(locations.keys()))
 longitude, latitude, zoom = locations[selected_location]
 
-# 🏔️ Pydeck TerrainLayer (Full 3D)
+# 🏔️ Pydeck TerrainLayer (Fix for Sticking Issue)
 terrain_layer = pdk.Layer(
     "TerrainLayer",
     elevation_decoder={
-        "rScaler": 65536,  # Scale for red channel
-        "gScaler": 256,     # Scale for green channel
-        "bScaler": 1,       # Scale for blue channel
-        "offset": 0         # Offset for elevation values
+        "rScaler": 65536,
+        "gScaler": 256,
+        "bScaler": 1,
+        "offset": 0
     },
     elevation_data=f"https://api.mapbox.com/v4/mapbox.terrain-rgb/{{z}}/{{x}}/{{y}}.pngraw?access_token={MAPBOX_TOKEN}",
-    texture="https://basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png",
-    bounds=[-180, -85.0511, 180, 85.0511]  # Global bounds
+    texture="https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/256/{z}/{x}/{y}?access_token=" + MAPBOX_TOKEN,
+    bounds=[longitude - 1, latitude - 1, longitude + 1, latitude + 1],  # Smaller bounds to prevent gaps
 )
 
-# 🗺️ Pydeck View Configuration
+# 🗺️ Pydeck View Configuration (Fix for Zooming Issue)
 view_state = pdk.ViewState(
     longitude=longitude,
     latitude=latitude,
     zoom=zoom,
-    pitch=60,  # Tilt for 3D effect
+    min_zoom=5,  # Prevent zooming out too much
+    max_zoom=15,  # Prevent excessive zoom causing terrain gaps
+    pitch=60,
     bearing=30
 )
 
+# 🗺️ Render 3D Terrain in Streamlit
+st.pydeck_chart(pdk.Deck(
+    layers=[terrain_layer],
+    initial_view_state=view_state,
+    map_style=None,  # No additional map style to avoid conflict
+    api_keys={"mapbox": MAPBOX_TOKEN}
+))
 # 🗺️ Render 3D Terrain in Streamlit
 st.pydeck_chart(pdk.Deck(
     layers=[terrain_layer],
