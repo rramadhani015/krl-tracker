@@ -31,9 +31,9 @@ view_state = pdk.ViewState(
 terrain_layer = pdk.Layer(
     "TerrainLayer",
     data=[],
-    elevation_data="mapbox://mapbox.terrain-rgb",
-    # elevation_data="https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
-    # texture="mapbox://mapbox.satellite",
+    # elevation_data="mapbox://mapbox.terrain-rgb",
+    elevation_data="https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
+    texture="mapbox://mapbox.satellite",
     elevation_decoder={
         "rScaler": 256,
         "gScaler": 1,
