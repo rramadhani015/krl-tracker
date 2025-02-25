@@ -11,8 +11,10 @@ bearing = st.sidebar.slider("Bearing", min_value=0, max_value=360, value=0, step
 
 # Define the viewport for the map
 view = pdk.ViewState(
-    latitude=32.7213,  # Example location
-    longitude=-114.26608,
+    # latitude=32.7213,  # Example location
+    # longitude=-114.26608,
+    latitude=854,  # Example location
+    longitude=396,
     zoom=12,
     pitch=pitch,
     bearing=bearing
