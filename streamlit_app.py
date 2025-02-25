@@ -1,55 +1,64 @@
-import streamlit as st
+import numpy as np
+import matplotlib.pyplot as plt
+import rasterio
 import pydeck as pdk
+from rasterio.plot import show
+from io import BytesIO
+import requests
+from PIL import Image
 
-# 🔑 Your Mapbox API Key (replace with your real key)
-MAPBOX_TOKEN = "pk.eyJ1IjoicmFtYWRoYW5pMDE1IiwiYSI6ImNtN2p6N21oaDBhaDcyanMzMHRiNjJsOTEifQ.tS3O3ERXLBjrqlfYep2OLQ"
+# Define the URL for AWS Terrarium DEM (Example: Indonesia Region)
+TERRAIN_URL = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
 
-# 🎯 Locations in Indonesia
-locations = {
-    "Mount Merapi, Indonesia": [110.44, -7.54, 10],
-    "Mount Bromo, Indonesia": [112.95, -7.92, 11],
-    "Jakarta, Indonesia": [106.85, -6.2, 10]
-}
+# Define the color ramp using Matplotlib colormap
+COLORMAP = plt.get_cmap("terrain")  # You can also try "viridis", "plasma", etc.
 
-# 📍 Select a location
-selected_location = st.selectbox("Choose a location:", list(locations.keys()))
-longitude, latitude, zoom = locations[selected_location]
+def fetch_terrain_tile(z, x, y):
+    """Fetches a terrain RGB tile from AWS Terrarium."""
+    url = TERRAIN_URL.format(z=z, x=x, y=y)
+    response = requests.get(url)
+    if response.status_code == 200:
+        return Image.open(BytesIO(response.content))
+    else:
+        print("Failed to fetch terrain tile")
+        return None
 
-# 🎨 **Color ramp for elevation**
-elevation_color_ramp = [
-    [0, [242, 239, 233]],       # Lowland
-    [500, [205, 174, 112]],     # Hills
-    [1000, [160, 112, 65]],     # Mountains
-    [2000, [100, 64, 40]],      # Higher elevation
-    [3000, [60, 40, 25]],       # Peaks
-]
+def convert_rgb_to_elevation(img):
+    """Converts a terrain RGB image to elevation values."""
+    img = np.array(img)
+    r, g, b = img[:, :, 0], img[:, :, 1], img[:, :, 2]
+    elevation = (r * 256 + g + b / 256) - 32768
+    return elevation
 
-# 🏔️ **3D Terrain Layer with colorized elevation**
-terrain_layer = pdk.Layer(
-    "TerrainLayer",
-    elevation_data=f"https://api.mapbox.com/v4/mapbox.terrain-rgb/{{z}}/{{x}}/{{y}}.pngraw?access_token={MAPBOX_TOKEN}",
-    elevation_decoder={"rScaler": 65536, "gScaler": 256, "bScaler": 1, "offset": 0},
-    texture=f"https://api.mapbox.com/styles/v1/mapbox/outdoors-v11/tiles/{{z}}/{{x}}/{{y}}?access_token={MAPBOX_TOKEN}",  # Adds realistic terrain color
-    color=elevation_color_ramp,
-    bounds=[longitude - 1, latitude - 1, longitude + 1, latitude + 1]
-)
+def apply_colormap(elevation):
+    """Applies a colormap to the elevation data."""
+    norm_elevation = (elevation - np.min(elevation)) / (np.max(elevation) - np.min(elevation))
+    colored = COLORMAP(norm_elevation)
+    return (colored[:, :, :3] * 255).astype(np.uint8)  # Convert to 8-bit RGB
 
-# 📌 3D View Configuration
-view_state = pdk.ViewState(
-    longitude=longitude,
-    latitude=latitude,
-    zoom=zoom,
-    pitch=60,
-    bearing=30,
-    min_zoom=5,
-    max_zoom=15
-)
-
-# 🗺️ Render the map with custom colors
-st.pydeck_chart(pdk.Deck(
-    layers=[terrain_layer],
-    initial_view_state=view_state,
-    map_style=None,  # ❌ No basemap, just colorized terrain
-    api_keys={"mapbox": MAPBOX_TOKEN}
-))
-
+# Fetch and process a tile
+z, x, y = 6, 55, 32  # Example tile coordinates
+terrain_tile = fetch_terrain_tile(z, x, y)
+if terrain_tile:
+    elevation = convert_rgb_to_elevation(terrain_tile)
+    colored_tile = apply_colormap(elevation)
+    colored_image = Image.fromarray(colored_tile)
+    
+    # Save the image or visualize it
+    colored_image.save("colored_terrain.png")
+    plt.imshow(colored_tile)
+    plt.axis("off")
+    plt.show()
+    
+    # Pydeck visualization
+    view = pdk.ViewState(latitude=-2.5, longitude=117.5, zoom=4, pitch=60)
+    
+    layer = pdk.Layer(
+        "BitmapLayer",
+        data=None,
+        image="colored_terrain.png",  # Load pre-colored terrain texture
+        bounds=[113, -5, 122, 0],  # Example bounding box for Indonesia
+    )
+    
+    deck = pdk.Deck(layers=[layer], initial_view_state=view)
+    deck.to_html("terrain_colormap.html")  # Export as interactive HTML
