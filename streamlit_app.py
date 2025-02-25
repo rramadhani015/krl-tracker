@@ -13,7 +13,7 @@ bearing = st.sidebar.slider("Bearing", min_value=0, max_value=360, value=0, step
 view = pdk.ViewState(
     latitude=32.7213,  # Example location
     longitude=-114.26608,
-    zoom=zoom,
+    zoom=12,
     pitch=pitch,
     bearing=bearing
 )
