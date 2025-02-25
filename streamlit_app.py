@@ -1,7 +1,7 @@
 import streamlit as st
 
 # 🔑 Your Mapbox API Key
-MAPBOX_TOKEN = "pk.eyJ1IjoicmFtYWRoYW5pMDE1IiwiYSI6ImNpeHo1ZTU4eTAwNXAzM3J5YTB0cndteWIifQ.TfUY-zPT2r6bdci0vc7FCA"
+MAPBOX_TOKEN = "pk.eyJ1IjoicmFtYWRoYW5pMDE1IiwiYSI6ImNtN2p6N21oaDBhaDcyanMzMHRiNjJsOTEifQ.tS3O3ERXLBjrqlfYep2OLQ"
 
 # 📌 Select a test location
 regions = {
