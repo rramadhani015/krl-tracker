@@ -25,7 +25,7 @@ def fetch_terrain_tile(z, x, y):
 
 def convert_rgb_to_elevation(img):
     """Converts a terrain RGB image to elevation values."""
-    img = np.array(img)
+    img = np.array(img, dtype=np.float32)  # Ensure correct dtype
     r, g, b = img[:, :, 0], img[:, :, 1], img[:, :, 2]
     elevation = (r * 256 + g + b / 256) - 32768
     return elevation
