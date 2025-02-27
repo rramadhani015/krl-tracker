@@ -21,8 +21,6 @@ st.markdown("### How Elevation is Calculated")
 st.markdown("""
 The elevation in the hexagonal grid is determined based on the density of trees within each hexagon. 
 The more trees found within a hexagon's radius, the higher its elevation.
-- **Elevation Range**: Limits the minimum and maximum height.
-
 Higher density areas will have taller hexagons, while lower density areas will be shorter.
 """)
 
