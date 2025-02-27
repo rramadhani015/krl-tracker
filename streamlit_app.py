@@ -37,13 +37,25 @@ query_trees = """
 out;
 """
 
+# Overpass Query for Forest Areas in New York
+query_forest = """
+[out:json];
+(
+  way["landuse"="forest"](40.70,-74.00,40.80,-73.90);
+  relation["landuse"="forest"](40.70,-74.00,40.80,-73.90);
+);
+out geom;
+"""
+
 # Fetch tree data
 st.info("Fetching tree data from Overpass API...")
 response_trees = requests.get(url, params={"data": query_trees})
+response_forest = requests.get(url, params={"data": query_forest})
 
 tree_locations = []
-
+forest_polygons = []
 df_trees = pd.DataFrame()
+
 if response_trees.status_code == 200:
     data_trees = response_trees.json()
     tree_locations = [
@@ -52,10 +64,17 @@ if response_trees.status_code == 200:
     ]
     df_trees = pd.DataFrame(tree_locations)
 
-# Pydeck visualization
-if not df_trees.empty:
+if response_forest.status_code == 200:
+    data_forest = response_forest.json()
+    for element in data_forest.get("elements", []):
+        if "geometry" in element:
+            forest_polygons.append({
+                "path": [[point["lon"], point["lat"]] for point in element["geometry"]]
+            })
+
+def create_layer():
     if view_option == "Tree Density":
-        layer = pdk.Layer(
+        return pdk.Layer(
             "HexagonLayer",
             df_trees,
             get_position=["lon", "lat"],
@@ -70,18 +89,28 @@ if not df_trees.empty:
             ],
             pickable=True,
         )
-    else:
-        layer = pdk.Layer(
-            "HeatmapLayer",
+    elif view_option == "Tree Canopy Coverage":
+        return pdk.Layer(
+            "ScatterplotLayer",
             df_trees,
             get_position=["lon", "lat"],
-            opacity=0.9,
-            color_range=[
-                [0, 0, 255], [0, 100, 255], [0, 200, 255],
-                [0, 255, 150], [0, 255, 50], [255, 255, 0]
-            ],
+            get_radius=5,  # Approximate canopy radius in meters
+            get_fill_color=[0, 200, 0, 100],  # Green semi-transparent
+            pickable=True,
         )
-    
+    elif view_option == "Forest Areas":
+        return pdk.Layer(
+            "PolygonLayer",
+            forest_polygons,
+            get_polygon="path",
+            get_fill_color=[34, 139, 34, 100],  # Forest green with transparency
+            pickable=True,
+        )
+    return None
+
+# Pydeck visualization
+if not df_trees.empty or forest_polygons:
+    layer = create_layer()
     view_state = pdk.ViewState(
         longitude=df_trees["lon"].mean() if not df_trees.empty else -73.95,
         latitude=df_trees["lat"].mean() if not df_trees.empty else 40.75,
@@ -101,4 +130,3 @@ if not df_trees.empty:
     )
 
     st.pydeck_chart(deck)
-
