@@ -54,8 +54,8 @@ if not df.empty:
         "HexagonLayer",
         df,
         get_position=["lon", "lat"],
-        radius=100,
-        elevation_scale=10,
+        radius=radius,
+        elevation_scale=elevation_scale,
         elevation_range=[0, 1000],
         extruded=True,
         coverage=1,
@@ -63,6 +63,18 @@ if not df.empty:
             [0, 50, 0], [100, 200, 100], [150, 255, 150],
             [255, 255, 100], [255, 100, 50], [255, 0, 0]
         ]
+    )
+    
+    text_layer = pdk.Layer(
+        "TextLayer",
+        df,
+        get_position=["lon", "lat"],
+        get_text="Tree Density",
+        get_size=12,
+        get_color=[255, 255, 255],
+        get_angle=0,
+        pickable=True,
+        background=True
     )
 
     view_state = pdk.ViewState(
@@ -74,7 +86,7 @@ if not df.empty:
     )
 
     deck = pdk.Deck(
-        layers=[hex_layer],
+        layers=[hex_layer, text_layer],
         initial_view_state=view_state,
         map_style="mapbox://styles/mapbox/light-v10",
     )
