@@ -6,12 +6,14 @@ import pydeck as pdk
 st.title("🌳 Tree Density Map (New York)")
 st.markdown("Visualizing tree density using a hexagonal grid.")
 
-# User controls
-zoom_level = st.slider("Zoom Level", 10, 18, 12)
-radius = st.slider("Hexagon Radius (meters)", 100, 1000, 200)
-elevation_scale = st.slider("Elevation Scale", 10, 100, 20)
-pitch = st.slider("Map Pitch", 0, 60, 45)
-bearing = st.slider("Map Bearing", 0, 360, 0)
+# Sidebar for user controls
+with st.sidebar:
+    st.header("Map Controls")
+    zoom_level = st.slider("Zoom Level", 10, 18, 12)
+    radius = st.slider("Hexagon Radius (meters)", 100, 1000, 200)
+    elevation_scale = st.slider("Elevation Scale", 10, 100, 20)
+    pitch = st.slider("Map Pitch", 0, 60, 45)
+    bearing = st.slider("Map Bearing", 0, 360, 0)
 
 # Overpass API endpoint
 url = "http://overpass-api.de/api/interpreter"
