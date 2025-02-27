@@ -72,19 +72,14 @@ if not df_trees.empty:
         )
     else:
         layer = pdk.Layer(
-            "HexagonLayer",
+            "HeatmapLayer",
             df_trees,
             get_position=["lon", "lat"],
-            radius=radius,
-            elevation_scale=elevation_scale * 2,  # Adjusted for canopy impact
-            elevation_range=[0, 1000],
-            extruded=True,
-            coverage=1,
+            opacity=0.9,
             color_range=[
-                [0, 100, 0], [50, 150, 50], [100, 200, 100],
-                [150, 255, 150], [200, 255, 200], [255, 255, 255]
+                [0, 0, 255], [0, 100, 255], [0, 200, 255],
+                [0, 255, 150], [0, 255, 50], [255, 255, 0]
             ],
-            pickable=True,
         )
     
     view_state = pdk.ViewState(
@@ -106,5 +101,4 @@ if not df_trees.empty:
     )
 
     st.pydeck_chart(deck)
-
 
