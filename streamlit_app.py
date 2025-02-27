@@ -9,7 +9,7 @@ st.markdown("Visualizing tree data with options for density and canopy coverage.
 # Sidebar for user controls
 with st.sidebar:
     st.header("Map Controls")
-    view_option = st.radio("Select View", ["Tree Density", "Tree Canopy Coverage", "Forest Areas", "Combined View"])
+    view_option = st.radio("Select View", ["Tree Density", "Tree Canopy Coverage"])
     zoom_level = st.slider("Zoom Level", 10, 18, 12)
     radius = st.slider("Hexagon Radius (meters)", 100, 1000, 200)
     elevation_scale = st.slider("Elevation Scale", 10, 100, 20)
@@ -114,11 +114,7 @@ def create_layer():
     if view_option == "Tree Density":
         return [hex_layer]
     elif view_option == "Tree Canopy Coverage":
-        return [canopy_layer]
-    elif view_option == "Forest Areas":
-        return [forest_layer]
-    elif view_option == "Combined View":
-        return [hex_layer, canopy_layer, forest_layer]
+        return [canopy_layer, forest_layer]
     return []
 
 # Pydeck visualization
