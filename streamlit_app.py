@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 import pydeck as pdk
+import openaq
 
 st.title("🌳 Tree Map (New York)")
 st.markdown("Visualizing tree data with options for density, canopy coverage, heat island effect, and air quality correlation.")
@@ -10,7 +11,7 @@ st.markdown("Visualizing tree data with options for density, canopy coverage, he
 with st.sidebar:
     st.header("Map Controls")
     view_option = st.radio("Select View", ["Tree Density", "Tree Canopy Coverage", "Heat Island Effect", "Air Quality Correlation"])
-    zoom_level = 12
+    zoom_level = st.slider("Zoom Level", 10, 18, 12)
     radius = st.slider("Hexagon Radius (meters)", 50, 200, 50)
     elevation_scale = st.slider("Elevation Scale", 5, 20, 5)
     pitch = 45 if view_option == "Tree Density" else 0  # 3D for density, 2D otherwise
@@ -21,7 +22,7 @@ st.markdown("""
 For **Tree Density**, elevation represents the number of trees within each hexagon.
 For **Tree Canopy Coverage**, elevation represents estimated canopy coverage based on OSM data.
 For **Heat Island Effect**, temperature data is overlaid with tree density to highlight urban heat zones.
-For **Air Quality Correlation**, tree coverage is compared against AQI data.
+For **Air Quality Correlation**, tree coverage is compared against AQI data from OpenAQ.
 
 Higher density areas will have more intense colors in the heatmap.
 """)
@@ -69,10 +70,20 @@ if response_forest.status_code == 200:
         for element in data_forest.get("elements", [])
     ]
 
-df_temp = df_trees.copy()
-df_temp["temperature"] = (30 - df_trees.index % 5).astype(float)  # Simulated temperature variation
-df_aqi = df_trees.copy()
-df_aqi["aqi"] = (100 - df_trees.index % 50).astype(float)  # Simulated AQI values
+# Fetch AQI data from OpenAQ
+api = openaq.OpenAQ()
+
+def fetch_aqi_data(city='New York'):
+    status, resp = api.measurements(city=city, parameter='pm25', limit=100)
+    if status == 200:
+        results = resp['results']
+        aqi_data = [{'location': r['location'], 'value': r['value'], 'latitude': r['coordinates']['latitude'], 'longitude': r['coordinates']['longitude']} for r in results if 'coordinates' in r]
+        return pd.DataFrame(aqi_data)
+    else:
+        st.error("Failed to fetch AQI data.")
+        return pd.DataFrame()
+
+df_aqi = fetch_aqi_data()
 
 def create_layer():
     hex_layer = pdk.Layer(
@@ -106,32 +117,20 @@ def create_layer():
         get_line_color=[0, 50, 0, 200],
         pickable=True,
     )
-    heat_layer = pdk.Layer(
-        "HeatmapLayer",
-        df_temp,
-        get_position=["lon", "lat"],
-        get_weight="temperature",
-        radius=radius * 2,
-    )
     aqi_layer = pdk.Layer(
-        "HeatmapLayer",
+        "ScatterplotLayer",
         df_aqi,
-        get_position=["lon", "lat"],
-        get_weight="aqi",
-        radius=radius * 2,
-        color_range=[
-            [0, 0, 255, 255], [0, 255, 255, 255], [0, 255, 0, 255],
-            [255, 255, 0, 255], [255, 0, 0, 255]
-        ]
+        get_position=["longitude", "latitude"],
+        get_color=[255, 0, 0, 160],
+        get_radius=200,
+        pickable=True,
     )
     if view_option == "Tree Density":
         return [hex_layer]
     elif view_option == "Tree Canopy Coverage":
         return [canopy_layer, forest_layer]
-    elif view_option == "Heat Island Effect":
-        return [heat_layer]
     elif view_option == "Air Quality Correlation":
-        return [aqi_layer]
+        return [aqi_layer, canopy_layer, forest_layer]
     return []
 
 if not df_trees.empty:
@@ -145,7 +144,7 @@ if not df_trees.empty:
     )
 
     tooltip = {
-        "html": "<b>Tree Data:</b> {elevationValue}" if view_option == "Tree Density" else "<b>Temperature:</b> {temperature}°C" if view_option == "Heat Island Effect" else "<b>AQI Level:</b> {aqi}" if view_option == "Air Quality Correlation" else "<b>Tree Canopy Coverage</b>",
+        "html": "<b>Location:</b> {location} <br/> <b>PM2.5:</b> {value} µg/m³" if view_option == "Air Quality Correlation" else "<b>Tree Data:</b> {elevationValue}",
         "style": {"backgroundColor": "steelblue", "color": "white"}
     }
 
