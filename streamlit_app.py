@@ -65,10 +65,13 @@ df_trees = pd.DataFrame(tree_locations)
 
 if response_boundary.status_code == 200:
     data_boundary = response_boundary.json()
-    boundary_polygons = [
-        {"path": [[node["lon"], node["lat"]] for node in way["geometry"]]}
-        for way in data_boundary.get("elements", []) if "geometry" in way
-    ]
+    for element in data_boundary.get("elements", []):
+        if "type" in element and element["type"] == "relation":
+            for member in element.get("members", []):
+                if member["type"] == "way" and "geometry" in member:
+                    boundary_polygons.append({
+                        "path": [[node["lon"], node["lat"]] for node in member["geometry"]]
+                    })
 
 df_boundary = pd.DataFrame(boundary_polygons)
 
@@ -94,15 +97,15 @@ if not df_trees.empty:
         "PolygonLayer",
         df_boundary,
         get_polygon="path",
-        get_fill_color=[200, 200, 200, 50],
+        get_fill_color=[200, 200, 200, 80],  # Slightly more visible fill
         get_line_color=[0, 0, 0],
         line_width_min_pixels=2,
         pickable=True,
     )
 
     view_state = pdk.ViewState(
-        longitude=df_trees["lon"].mean(),
-        latitude=df_trees["lat"].mean(),
+        longitude=df_trees["lon"].mean() if not df_trees.empty else -73.95,
+        latitude=df_trees["lat"].mean() if not df_trees.empty else 40.75,
         zoom=zoom_level,
         pitch=pitch,
         bearing=bearing,
