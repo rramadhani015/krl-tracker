@@ -7,8 +7,8 @@ st.title("🌳 Tree Density Map (New York)")
 st.markdown("Visualizing tree density using a hexagonal grid.")
 
 # Sidebar for user controls
-radius = 10
-elevation_scale = 100
+radius = 100
+elevation_scale = 10
 with st.sidebar:
     st.header("Map Controls")
     zoom_level = st.slider("Zoom Level", 10, 18, 12)
