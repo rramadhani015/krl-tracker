@@ -101,7 +101,7 @@ def create_layer():
         df_trees,
         get_position=["lon", "lat"],
         get_radius=5,  # Approximate canopy radius in meters
-        get_fill_color=[0, 0, 200, 0],  # Blue semi-transparent
+        get_fill_color=[0, 0, 200, 255],  # Solid Blue
         pickable=True,
     )
     forest_layer = pdk.Layer(
@@ -128,14 +128,16 @@ if not df_trees.empty or forest_polygons:
         bearing=bearing,
     )
 
+    tooltip = {
+        "html": "<b>Tree Data:</b> {elevationValue}" if view_option == "Tree Density" else "<b>Tree Canopy Coverage</b>",
+        "style": {"backgroundColor": "steelblue", "color": "white"}
+    }
+
     deck = pdk.Deck(
         layers=layers,
         initial_view_state=view_state,
         map_style="mapbox://styles/mapbox/light-v10",
-        tooltip={
-            "html": "<b>Tree Data:</b> {elevationValue}",
-            "style": {"backgroundColor": "steelblue", "color": "white"}
-        }
+        tooltip=tooltip
     )
 
     st.pydeck_chart(deck)
