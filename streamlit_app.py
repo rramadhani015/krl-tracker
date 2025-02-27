@@ -114,7 +114,7 @@ def create_layer():
     if view_option == "Tree Density":
         return [hex_layer]
     elif view_option == "Tree Canopy Coverage":
-        return [canopy_layer, forest_layer]
+        return [forest_layer, canopy_layer]
     return []
 
 # Pydeck visualization
