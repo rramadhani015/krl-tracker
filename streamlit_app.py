@@ -38,21 +38,11 @@ query_trees = """
 out;
 """
 
-query_boundary = """
-[out:json];
-(
-  relation["admin_level"="4"](40.70,-74.00,40.80,-73.90);
-);
-out geom;
-"""
-
 # Fetch tree data
-st.info("Fetching tree and boundary data from Overpass API...")
+st.info("Fetching tree data from Overpass API...")
 response_trees = requests.get(url, params={"data": query_trees})
-response_boundary = requests.get(url, params={"data": query_boundary})
 
 tree_locations = []
-boundary_polygons = []
 
 if response_trees.status_code == 200:
     data_trees = response_trees.json()
@@ -62,18 +52,6 @@ if response_trees.status_code == 200:
     ]
 
 df_trees = pd.DataFrame(tree_locations)
-
-if response_boundary.status_code == 200:
-    data_boundary = response_boundary.json()
-    for element in data_boundary.get("elements", []):
-        if "type" in element and element["type"] == "relation":
-            for member in element.get("members", []):
-                if member["type"] == "way" and "geometry" in member:
-                    boundary_polygons.append({
-                        "path": [[node["lon"], node["lat"]] for node in member["geometry"]]
-                    })
-
-df_boundary = pd.DataFrame(boundary_polygons)
 
 # Pydeck visualization
 if not df_trees.empty:
@@ -93,16 +71,6 @@ if not df_trees.empty:
         pickable=True,
     )
     
-    boundary_layer = pdk.Layer(
-        "PolygonLayer",
-        df_boundary,
-        get_polygon="path",
-        get_fill_color=[200, 200, 200, 80],  # Slightly more visible fill
-        get_line_color=[0, 0, 0],
-        line_width_min_pixels=2,
-        pickable=True,
-    )
-
     view_state = pdk.ViewState(
         longitude=df_trees["lon"].mean() if not df_trees.empty else -73.95,
         latitude=df_trees["lat"].mean() if not df_trees.empty else 40.75,
@@ -112,7 +80,7 @@ if not df_trees.empty:
     )
 
     deck = pdk.Deck(
-        layers=[hex_layer, boundary_layer],
+        layers=[hex_layer],
         initial_view_state=view_state,
         map_style="mapbox://styles/mapbox/light-v10",
         tooltip={
@@ -122,3 +90,4 @@ if not df_trees.empty:
     )
 
     st.pydeck_chart(deck)
+
