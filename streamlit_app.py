@@ -10,7 +10,6 @@ st.markdown("Visualizing tree data with options for density and canopy coverage.
 with st.sidebar:
     st.header("Map Controls")
     view_option = st.radio("Select View", ["Tree Density", "Tree Canopy Coverage"])
-    zoom_level = st.slider("Zoom Level", 10, 18, 12)
     radius = st.slider("Hexagon Radius (meters)", 50, 200, 50)
     elevation_scale = st.slider("Elevation Scale", 5, 20, 5)
     pitch = 45 if view_option == "Tree Density" else 0  # 3D for density, 2D for canopy
