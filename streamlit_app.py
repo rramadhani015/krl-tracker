@@ -3,26 +3,29 @@ import requests
 import pandas as pd
 import pydeck as pdk
 
-st.title("🌳 Tree Density Map (New York)")
-st.markdown("Visualizing tree density using a hexagonal grid.")
+st.title("🌳 Tree Map (New York)")
+st.markdown("Visualizing tree data with options for density and canopy coverage.")
 
 # Sidebar for user controls
-radius = 200
-elevation_scale = 20
 with st.sidebar:
     st.header("Map Controls")
-    view_option = st.radio("Select View", ["Tree Density", "Tree Canopy Coverage", "Forest Areas"])
+    view_option = st.radio("Select View", ["Tree Density", "Tree Canopy Coverage", "Forest Areas", "Combined View"])
     zoom_level = st.slider("Zoom Level", 10, 18, 12)
-    radius = st.slider("Hexagon Radius (meters)", 100, 600, 200)
+    radius = st.slider("Hexagon Radius (meters)", 100, 1000, 200)
     elevation_scale = st.slider("Elevation Scale", 10, 100, 20)
     pitch = st.slider("Map Pitch", 0, 60, 45)
     bearing = st.slider("Map Bearing", 0, 360, 0)
-    
+
 st.markdown("### How Elevation is Calculated")
 st.markdown("""
-The elevation in the hexagonal grid is determined based on the density of trees within each hexagon. 
-The more trees found within a hexagon's radius, the higher its elevation.
-Higher density areas will have taller hexagons, while lower density areas will be shorter.
+For **Tree Density**, the elevation in the hexagonal grid is determined based on the number of trees within each hexagon. 
+For **Tree Canopy Coverage**, estimated canopy coverage is calculated by buffering each tree point with an assumed average canopy radius (e.g., 5 meters).
+For **Forest Areas**, OSM multipolygon data is used to display larger tree-covered regions.
+
+- **Elevation Scale**: Controls the height of the hexagons based on density.
+- **Radius**: Defines the area each hexagon covers.
+
+Higher density areas will have more intense colors in the heatmap.
 """)
 
 # Overpass API endpoint
@@ -78,44 +81,49 @@ st.write(f"Total Trees: {len(df_trees)}")
 st.write(f"Total Forest Polygons: {len(forest_polygons)}")
 
 def create_layer():
+    hex_layer = pdk.Layer(
+        "HexagonLayer",
+        df_trees,
+        get_position=["lon", "lat"],
+        radius=radius,
+        elevation_scale=elevation_scale,
+        elevation_range=[0, 1000],
+        extruded=True,
+        coverage=1,
+        color_range=[
+            [0, 50, 0], [100, 200, 100], [150, 255, 150],
+            [255, 255, 100], [255, 100, 50], [255, 0, 0]
+        ],
+        pickable=True,
+    )
+    canopy_layer = pdk.Layer(
+        "ScatterplotLayer",
+        df_trees,
+        get_position=["lon", "lat"],
+        get_radius=5,  # Approximate canopy radius in meters
+        get_fill_color=[0, 200, 0, 100],  # Green semi-transparent
+        pickable=True,
+    )
+    forest_layer = pdk.Layer(
+        "PolygonLayer",
+        forest_polygons,
+        get_polygon="path",
+        get_fill_color=[34, 139, 34, 100],  # Forest green with transparency
+        pickable=True,
+    )
     if view_option == "Tree Density":
-        return pdk.Layer(
-            "HexagonLayer",
-            df_trees,
-            get_position=["lon", "lat"],
-            radius=radius,
-            elevation_scale=elevation_scale,
-            elevation_range=[0, 1000],
-            extruded=True,
-            coverage=1,
-            color_range=[
-                [0, 50, 0], [100, 200, 100], [150, 255, 150],
-                [255, 255, 100], [255, 100, 50], [255, 0, 0]
-            ],
-            pickable=True,
-        )
+        return [hex_layer]
     elif view_option == "Tree Canopy Coverage":
-        return pdk.Layer(
-            "ScatterplotLayer",
-            df_trees,
-            get_position=["lon", "lat"],
-            get_radius=5,  # Approximate canopy radius in meters
-            get_fill_color=[0, 200, 0, 100],  # Green semi-transparent
-            pickable=True,
-        )
-    elif view_option == "Forest Areas" and forest_polygons:
-        return pdk.Layer(
-            "PolygonLayer",
-            forest_polygons,
-            get_polygon="path",
-            get_fill_color=[34, 139, 34, 100],  # Forest green with transparency
-            pickable=True,
-        )
-    return None
+        return [canopy_layer]
+    elif view_option == "Forest Areas":
+        return [forest_layer]
+    elif view_option == "Combined View":
+        return [hex_layer, canopy_layer, forest_layer]
+    return []
 
 # Pydeck visualization
 if not df_trees.empty or forest_polygons:
-    layer = create_layer()
+    layers = create_layer()
     view_state = pdk.ViewState(
         longitude=df_trees["lon"].mean() if not df_trees.empty else -73.95,
         latitude=df_trees["lat"].mean() if not df_trees.empty else 40.75,
@@ -125,7 +133,7 @@ if not df_trees.empty or forest_polygons:
     )
 
     deck = pdk.Deck(
-        layers=[layer] if layer else [],
+        layers=layers,
         initial_view_state=view_state,
         map_style="mapbox://styles/mapbox/light-v10",
         tooltip={
@@ -135,3 +143,4 @@ if not df_trees.empty or forest_polygons:
     )
 
     st.pydeck_chart(deck)
+
