@@ -13,7 +13,7 @@ with st.sidebar:
     zoom_level = st.slider("Zoom Level", 10, 18, 12)
     radius = st.slider("Hexagon Radius (meters)", 100, 1000, 200)
     elevation_scale = st.slider("Elevation Scale", 10, 100, 20)
-    pitch = st.slider("Map Pitch", 0, 60, 45)
+    pitch = 45 if view_option == "Tree Density" else 0  # 3D for density, 2D for canopy
     bearing = st.slider("Map Bearing", 0, 360, 0)
 
 st.markdown("### How Elevation is Calculated")
@@ -101,7 +101,7 @@ def create_layer():
         df_trees,
         get_position=["lon", "lat"],
         get_radius=5,  # Approximate canopy radius in meters
-        get_fill_color=[0, 0, 200, 100],  # Blue semi-transparent
+        get_fill_color=[0, 0, 200, 0],  # Blue semi-transparent
         pickable=True,
     )
     forest_layer = pdk.Layer(
@@ -139,4 +139,3 @@ if not df_trees.empty or forest_polygons:
     )
 
     st.pydeck_chart(deck)
-
