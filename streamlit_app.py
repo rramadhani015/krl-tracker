@@ -52,6 +52,26 @@ else:
     st.error("Failed to fetch data from Overpass API.")
     df = pd.DataFrame(columns=["lat", "lon"])
 
+# Define New York boundary
+ny_boundary = {
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[
+                    [-74.00, 40.70],
+                    [-73.90, 40.70],
+                    [-73.90, 40.80],
+                    [-74.00, 40.80],
+                    [-74.00, 40.70]
+                ]]
+            }
+        }
+    ]
+}
+
 # Pydeck visualization
 if not df.empty:
     hex_layer = pdk.Layer(
@@ -80,6 +100,15 @@ if not df.empty:
         pickable=True,
         background=True
     )
+    
+    boundary_layer = pdk.Layer(
+        "GeoJsonLayer",
+        ny_boundary,
+        stroked=True,
+        filled=False,
+        line_width_min_pixels=2,
+        get_line_color=[255, 0, 0],  # Red outline for the boundary
+    )
 
     view_state = pdk.ViewState(
         longitude=df["lon"].mean(),
@@ -90,9 +119,11 @@ if not df.empty:
     )
 
     deck = pdk.Deck(
-        layers=[hex_layer, text_layer],
+        layers=[hex_layer, text_layer, boundary_layer],
         initial_view_state=view_state,
         map_style="mapbox://styles/mapbox/light-v10",
     )
+
+    st.pydeck_chart(deck)
 
     st.pydeck_chart(deck)
