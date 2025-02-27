@@ -1,47 +1,74 @@
 import streamlit as st
+import requests
+import pandas as pd
 import pydeck as pdk
-import os
 
-# Define Mapbox API key
-MAPBOX_API_KEY = "pk.eyJ1IjoicmFtYWRoYW5pMDE1IiwiYSI6ImNtN2p6N21oaDBhaDcyanMzMHRiNjJsOTEifQ.tS3O3ERXLBjrqlfYep2OLQ"
+st.title("🌳 Tree Density Map (Jakarta)")
+st.markdown("Visualizing tree density using a hexagonal grid.")
 
-# Set Mapbox API key
-os.environ["MAPBOX_API_KEY"] = MAPBOX_API_KEY
+# Overpass API endpoint
+url = "http://overpass-api.de/api/interpreter"
 
-# Sidebar controls
-st.sidebar.header("Map Controls")
-pitch = st.sidebar.slider("Pitch", min_value=0, max_value=60, value=60, step=5)
-bearing = st.sidebar.slider("Bearing", min_value=0, max_value=360, value=0, step=5)
+# Overpass Query for Trees in Jakarta
+query = """
+[out:json];
+(
+  node["natural"="tree"](-6.2,106.8,-6.15,106.9);
+);
+out;
+"""
 
-# Define the viewport for the map
-view = pdk.ViewState(
-    latitude=32.7213,  # Example location
-    longitude=-114.26608,
-    zoom=12,
-    pitch=pitch,
-    bearing=bearing
-)
+# Fetch data from Overpass API
+st.info("Fetching tree data from Overpass API...")
+response = requests.get(url, params={"data": query})
 
-# Define the terrain layer using Mapbox DEM Raster Tiles
-terrain_layer = pdk.Layer(
-    "TerrainLayer",
-    data=None,  # No input data required for raster layers
-    elevation_decoder={"rScaler": 256, "gScaler": 1, "bScaler": 1 / 256, "offset": -32768},
-    # elevation_data="https://api.mapbox.com/v4/mapbox.terrain-rgb/{zoom}/{x}/{y}{@2x}.pngraw?access_token="+ MAPBOX_API_KEY,
-    elevation_data="https://api.mapbox.com/v1/mapbox.terrain-rgb/10/854/396.pngraw?access_token=pk.eyJ1IjoicmFtYWRoYW5pMDE1IiwiYSI6ImNtN2p6N21oaDBhaDcyanMzMHRiNjJsOTEifQ.tS3O3ERXLBjrqlfYep2OLQ",
-    texture="https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/{z}/{x}/{y}?access_token=" + MAPBOX_API_KEY,
-    exaggeration=1.5,
-    bounds=[-115, 32, -113, 34],  # Define bounding box for visualization
-    material={"ambient": 0.5, "diffuse": 0.5, "shininess": 0.5, "specularColor": [255, 255, 255]},
-)
+if response.status_code == 200:
+    data = response.json()
+    
+    # Extract latitude & longitude
+    tree_locations = [
+        {"lat": element["lat"], "lon": element["lon"]}
+        for element in data.get("elements", [])
+    ]
+    
+    if tree_locations:
+        df = pd.DataFrame(tree_locations)
+        st.success(f"Total Trees Found: {len(df)}")
+    else:
+        st.warning("No tree data found.")
+        df = pd.DataFrame(columns=["lat", "lon"])
+else:
+    st.error("Failed to fetch data from Overpass API.")
+    df = pd.DataFrame(columns=["lat", "lon"])
 
-# Create the deck with the terrain layer
-deck = pdk.Deck(
-    layers=[terrain_layer],
-    initial_view_state=view,
-    map_provider="mapbox",
-    map_style="mapbox://styles/mapbox/satellite-streets-v12",
-)
+# Pydeck visualization
+if not df.empty:
+    hex_layer = pdk.Layer(
+        "HexagonLayer",
+        df,
+        get_position=["lon", "lat"],
+        radius=200,
+        elevation_scale=20,
+        elevation_range=[0, 1000],
+        extruded=True,
+        coverage=1,
+        color_range=[
+            [0, 50, 0], [100, 200, 100], [150, 255, 150],
+            [255, 255, 100], [255, 100, 50], [255, 0, 0]
+        ]
+    )
 
-# Display in Streamlit
-st.pydeck_chart(deck)
+    view_state = pdk.ViewState(
+        longitude=df["lon"].mean(),
+        latitude=df["lat"].mean(),
+        zoom=12,
+        pitch=45,
+    )
+
+    deck = pdk.Deck(
+        layers=[hex_layer],
+        initial_view_state=view_state,
+        map_style="mapbox://styles/mapbox/light-v10",
+    )
+
+    st.pydeck_chart(deck)
