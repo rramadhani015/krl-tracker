@@ -7,11 +7,13 @@ st.title("🌳 Tree Density Map (New York)")
 st.markdown("Visualizing tree density using a hexagonal grid.")
 
 # Sidebar for user controls
-radius = 100
-elevation_scale = 10
+radius = 200
+elevation_scale = 20
 with st.sidebar:
     st.header("Map Controls")
     zoom_level = st.slider("Zoom Level", 10, 18, 12)
+    # radius = st.slider("Hexagon Radius (meters)", 100, 1000, 200)
+    # elevation_scale = st.slider("Elevation Scale", 10, 100, 20)
     pitch = st.slider("Map Pitch", 0, 60, 45)
     bearing = st.slider("Map Bearing", 0, 360, 0)
 
@@ -56,8 +58,8 @@ if not df.empty:
         "HexagonLayer",
         df,
         get_position=["lon", "lat"],
-        # radius=radius,
-        # elevation_scale=elevation_scale,
+        radius=radius,
+        elevation_scale=elevation_scale,
         elevation_range=[0, 1000],
         extruded=True,
         coverage=1,
