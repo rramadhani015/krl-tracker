@@ -11,8 +11,8 @@ with st.sidebar:
     st.header("Map Controls")
     view_option = st.radio("Select View", ["Tree Density", "Tree Canopy Coverage"])
     zoom_level = st.slider("Zoom Level", 10, 18, 12)
-    radius = st.slider("Hexagon Radius (meters)", 100, 1000, 200)
-    elevation_scale = st.slider("Elevation Scale", 10, 100, 20)
+    radius = st.slider("Hexagon Radius (meters)", 50, 200, 50)
+    elevation_scale = st.slider("Elevation Scale", 5, 20, 5)
     pitch = 45 if view_option == "Tree Density" else 0  # 3D for density, 2D for canopy
     bearing = st.slider("Map Bearing", 0, 360, 0)
 
@@ -44,8 +44,8 @@ out;
 query_forest = """
 [out:json];
 (
-  way["landuse"="forest"](40.70,-74.00,40.80,-73.90);
-  relation["landuse"="forest"](40.70,-74.00,40.80,-73.90);
+  way["landuse"~"forest|meadow|scrub|orchard"](40.70,-74.00,40.80,-73.90);
+  relation["landuse"~"forest|meadow|scrub|orchard"](40.70,-74.00,40.80,-73.90);
   way["natural"="wood"](40.70,-74.00,40.80,-73.90);
   relation["natural"="wood"](40.70,-74.00,40.80,-73.90);
 );
@@ -101,7 +101,7 @@ def create_layer():
         df_trees,
         get_position=["lon", "lat"],
         get_radius=5,  # Approximate canopy radius in meters
-        get_fill_color=[0, 0, 200, 255],  # Solid Blue
+        get_fill_color=[0, 0, 255, 255],  # Solid Blue
         pickable=True,
     )
     forest_layer = pdk.Layer(
@@ -129,7 +129,7 @@ if not df_trees.empty or forest_polygons:
     )
 
     tooltip = {
-        "html": "<b>Tree Data:</b> {elevationValue}" if view_option == "Tree Density" else "<b>Tree Canopy Coverage</b>",
+        "html": "<b>Tree Data:</b> {elevationValue}" if view_option == "Tree Density" else "<b>Tree Canopy Coverage</b> <br> OSM Tag: {natural} <br> Area: {area} sqm",
         "style": {"backgroundColor": "steelblue", "color": "white"}
     }
 
