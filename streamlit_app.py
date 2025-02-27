@@ -30,7 +30,7 @@ Higher density areas will have taller hexagons, while lower density areas will b
 url = "http://overpass-api.de/api/interpreter"
 
 # Overpass Query for Trees in New York
-query = """
+query_trees = """
 [out:json];
 (
   node["natural"="tree"](40.70,-74.00,40.80,-73.90);
@@ -38,34 +38,45 @@ query = """
 out;
 """
 
-# Fetch data from Overpass API
-st.info("Fetching tree data from Overpass API...")
-response = requests.get(url, params={"data": query})
+query_parcels = """
+[out:json];
+(
+  way["landuse"](40.70,-74.00,40.80,-73.90);
+);
+out geom;
+"""
 
-if response.status_code == 200:
-    data = response.json()
-    
-    # Extract latitude & longitude
+# Fetch tree data
+st.info("Fetching tree data from Overpass API...")
+response_trees = requests.get(url, params={"data": query_trees})
+response_parcels = requests.get(url, params={"data": query_parcels})
+
+tree_locations = []
+parcel_polygons = []
+
+if response_trees.status_code == 200:
+    data_trees = response_trees.json()
     tree_locations = [
         {"lat": element["lat"], "lon": element["lon"]}
-        for element in data.get("elements", [])
+        for element in data_trees.get("elements", [])
     ]
-    
-    if tree_locations:
-        df = pd.DataFrame(tree_locations)
-        st.success(f"Total Trees Found: {len(df)}")
-    else:
-        st.warning("No tree data found.")
-        df = pd.DataFrame(columns=["lat", "lon"])
-else:
-    st.error("Failed to fetch data from Overpass API.")
-    df = pd.DataFrame(columns=["lat", "lon"])
+
+df_trees = pd.DataFrame(tree_locations)
+
+if response_parcels.status_code == 200:
+    data_parcels = response_parcels.json()
+    parcel_polygons = [
+        {"path": [[node["lat"], node["lon"]] for node in way["geometry"]]}
+        for way in data_parcels.get("elements", []) if "geometry" in way
+    ]
+
+df_parcels = pd.DataFrame(parcel_polygons)
 
 # Pydeck visualization
-if not df.empty:
+if not df_trees.empty:
     hex_layer = pdk.Layer(
         "HexagonLayer",
-        df,
+        df_trees,
         get_position=["lon", "lat"],
         radius=radius,
         elevation_scale=elevation_scale,
@@ -79,38 +90,26 @@ if not df.empty:
         pickable=True,
     )
     
-    text_layer = pdk.Layer(
-        "TextLayer",
-        df,
-        get_position=["lon", "lat"],
-        get_text="Tree Density",
-        get_size=12,
-        get_color=[255, 255, 255],
-        get_angle=0,
-        pickable=True,
-        background=True
-    )
-    
-    # Tooltip Pin Layer
-    pin_layer = pdk.Layer(
-        "ScatterplotLayer",
-        df,
-        get_position=["lon", "lat"],
-        get_fill_color=[255, 0, 0],  # Red pin
-        get_radius=50,
+    parcel_layer = pdk.Layer(
+        "PolygonLayer",
+        df_parcels,
+        get_polygon="path",
+        get_fill_color=[200, 200, 200, 50],
+        get_line_color=[0, 0, 0],
+        line_width_min_pixels=1,
         pickable=True,
     )
 
     view_state = pdk.ViewState(
-        longitude=df["lon"].mean(),
-        latitude=df["lat"].mean(),
+        longitude=df_trees["lon"].mean(),
+        latitude=df_trees["lat"].mean(),
         zoom=zoom_level,
         pitch=pitch,
         bearing=bearing,
     )
 
     deck = pdk.Deck(
-        layers=[hex_layer, text_layer, pin_layer],
+        layers=[hex_layer, parcel_layer],
         initial_view_state=view_state,
         map_style="mapbox://styles/mapbox/light-v10",
         tooltip={
