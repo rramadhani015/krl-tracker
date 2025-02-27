@@ -125,5 +125,3 @@ if not df.empty:
     )
 
     st.pydeck_chart(deck)
-
-    st.pydeck_chart(deck)
