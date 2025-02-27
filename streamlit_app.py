@@ -38,21 +38,22 @@ query_trees = """
 out;
 """
 
-query_parcels = """
+query_landuse = """
 [out:json];
 (
   way["landuse"](40.70,-74.00,40.80,-73.90);
+  way["natural"](40.70,-74.00,40.80,-73.90);
 );
 out geom;
 """
 
 # Fetch tree data
-st.info("Fetching tree data from Overpass API...")
+st.info("Fetching tree and land use data from Overpass API...")
 response_trees = requests.get(url, params={"data": query_trees})
-response_parcels = requests.get(url, params={"data": query_parcels})
+response_landuse = requests.get(url, params={"data": query_landuse})
 
 tree_locations = []
-parcel_polygons = []
+landuse_polygons = []
 
 if response_trees.status_code == 200:
     data_trees = response_trees.json()
@@ -63,14 +64,14 @@ if response_trees.status_code == 200:
 
 df_trees = pd.DataFrame(tree_locations)
 
-if response_parcels.status_code == 200:
-    data_parcels = response_parcels.json()
-    parcel_polygons = [
+if response_landuse.status_code == 200:
+    data_landuse = response_landuse.json()
+    landuse_polygons = [
         {"path": [[node["lon"], node["lat"]] for node in way["geometry"]]}
-        for way in data_parcels.get("elements", []) if "geometry" in way
+        for way in data_landuse.get("elements", []) if "geometry" in way
     ]
 
-df_parcels = pd.DataFrame(parcel_polygons)
+df_landuse = pd.DataFrame(landuse_polygons)
 
 # Pydeck visualization
 if not df_trees.empty:
@@ -90,12 +91,12 @@ if not df_trees.empty:
         pickable=True,
     )
     
-    parcel_layer = pdk.Layer(
+    landuse_layer = pdk.Layer(
         "PolygonLayer",
-        df_parcels,
+        df_landuse,
         get_polygon="path",
-        get_fill_color=[200, 200, 200, 50],
-        get_line_color=[0, 0, 0],
+        get_fill_color=[100, 100, 255, 50],
+        get_line_color=[0, 0, 150],
         line_width_min_pixels=1,
         pickable=True,
     )
@@ -109,7 +110,7 @@ if not df_trees.empty:
     )
 
     deck = pdk.Deck(
-        layers=[hex_layer, parcel_layer],
+        layers=[hex_layer, landuse_layer],
         initial_view_state=view_state,
         map_style="mapbox://styles/mapbox/light-v10",
         tooltip={
