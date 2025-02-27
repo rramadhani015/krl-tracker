@@ -66,7 +66,7 @@ df_trees = pd.DataFrame(tree_locations)
 if response_parcels.status_code == 200:
     data_parcels = response_parcels.json()
     parcel_polygons = [
-        {"path": [[node["lat"], node["lon"]] for node in way["geometry"]]}
+        {"path": [[node["lon"], node["lat"]] for node in way["geometry"]]}
         for way in data_parcels.get("elements", []) if "geometry" in way
     ]
 
