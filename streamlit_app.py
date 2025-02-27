@@ -11,10 +11,10 @@ radius = 200
 elevation_scale = 20
 with st.sidebar:
     st.header("Map Controls")
-    view_option = st.radio("Select View", ["Tree Density", "Tree Canopy Coverage"])
+    view_option = st.radio("Select View", ["Tree Density", "Tree Canopy Coverage", "Forest Areas"])
     zoom_level = st.slider("Zoom Level", 10, 18, 12)
-    # radius = st.slider("Hexagon Radius (meters)", 100, 1000, 200)
-    # elevation_scale = st.slider("Elevation Scale", 10, 100, 20)
+    radius = st.slider("Hexagon Radius (meters)", 100, 600, 200)
+    elevation_scale = st.slider("Elevation Scale", 10, 100, 20)
     pitch = st.slider("Map Pitch", 0, 60, 45)
     bearing = st.slider("Map Bearing", 0, 360, 0)
     
