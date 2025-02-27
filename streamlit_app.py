@@ -86,7 +86,8 @@ if not df.empty:
         color_range=[
             [0, 50, 0], [100, 200, 100], [150, 255, 150],
             [255, 255, 100], [255, 100, 50], [255, 0, 0]
-        ]
+        ],
+        pickable=True,
     )
     
     text_layer = pdk.Layer(
@@ -109,6 +110,16 @@ if not df.empty:
         line_width_min_pixels=2,
         get_line_color=[255, 0, 0],  # Red outline for the boundary
     )
+    
+    # Tooltip Pin Layer
+    pin_layer = pdk.Layer(
+        "ScatterplotLayer",
+        df,
+        get_position=["lon", "lat"],
+        get_fill_color=[255, 0, 0],  # Red pin
+        get_radius=50,
+        pickable=True,
+    )
 
     view_state = pdk.ViewState(
         longitude=df["lon"].mean(),
@@ -119,9 +130,13 @@ if not df.empty:
     )
 
     deck = pdk.Deck(
-        layers=[hex_layer, text_layer, boundary_layer],
+        layers=[hex_layer, text_layer, boundary_layer, pin_layer],
         initial_view_state=view_state,
         map_style="mapbox://styles/mapbox/light-v10",
+        tooltip={
+            "html": "<b>Tree Density:</b> {elevationValue}",
+            "style": {"backgroundColor": "steelblue", "color": "white"}
+        }
     )
 
     st.pydeck_chart(deck)
