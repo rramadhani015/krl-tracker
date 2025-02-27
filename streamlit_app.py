@@ -101,7 +101,7 @@ def create_layer():
         df_trees,
         get_position=["lon", "lat"],
         get_radius=5,  # Approximate canopy radius in meters
-        get_fill_color=[0, 200, 0, 100],  # Green semi-transparent
+        get_fill_color=[0, 0, 200, 100],  # Blue semi-transparent
         pickable=True,
     )
     forest_layer = pdk.Layer(
