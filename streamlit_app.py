@@ -43,6 +43,8 @@ query_forest = """
 (
   way["landuse"="forest"](40.70,-74.00,40.80,-73.90);
   relation["landuse"="forest"](40.70,-74.00,40.80,-73.90);
+  way["natural"="wood"](40.70,-74.00,40.80,-73.90);
+  relation["natural"="wood"](40.70,-74.00,40.80,-73.90);
 );
 out geom;
 """
@@ -72,6 +74,9 @@ if response_forest.status_code == 200:
                 "path": [[point["lon"], point["lat"]] for point in element["geometry"]]
             })
 
+st.write(f"Total Trees: {len(df_trees)}")
+st.write(f"Total Forest Polygons: {len(forest_polygons)}")
+
 def create_layer():
     if view_option == "Tree Density":
         return pdk.Layer(
@@ -98,7 +103,7 @@ def create_layer():
             get_fill_color=[0, 200, 0, 100],  # Green semi-transparent
             pickable=True,
         )
-    elif view_option == "Forest Areas":
+    elif view_option == "Forest Areas" and forest_polygons:
         return pdk.Layer(
             "PolygonLayer",
             forest_polygons,
@@ -120,7 +125,7 @@ if not df_trees.empty or forest_polygons:
     )
 
     deck = pdk.Deck(
-        layers=[layer],
+        layers=[layer] if layer else [],
         initial_view_state=view_state,
         map_style="mapbox://styles/mapbox/light-v10",
         tooltip={
