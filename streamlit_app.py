@@ -3,17 +3,17 @@ import requests
 import pandas as pd
 import pydeck as pdk
 
-st.title("🌳 Tree Density Map (Jakarta)")
+st.title("🌳 Tree Density Map (New York)")
 st.markdown("Visualizing tree density using a hexagonal grid.")
 
 # Overpass API endpoint
 url = "http://overpass-api.de/api/interpreter"
 
-# Overpass Query for Trees in Jakarta
+# Overpass Query for Trees in New York
 query = """
 [out:json];
 (
-  node["natural"="tree"](-6.2,106.8,-6.15,106.9);
+  node["natural"="tree"](40.70,-74.00,40.80,-73.90);
 );
 out;
 """
