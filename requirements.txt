@@ -4,4 +4,5 @@ requests
 pydeck
 matplotlib
 rasterio
-openaq
+geopy
+geocoder
