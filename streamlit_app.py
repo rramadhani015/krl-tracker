@@ -1,16 +1,16 @@
-import geocoder
 import requests
 import streamlit as st
 import folium
 from streamlit_folium import folium_static
+from streamlit_js_eval import streamlit_js_eval
 
-# Function to get user's location
+# Function to get user's location using JavaScript
 def get_location():
-    g = geocoder.ip('me')  # Get approximate location from IP
-    if g.latlng:
-        return g.latlng  # Returns (latitude, longitude)
-    else:
-        return None
+    location = streamlit_js_eval("navigator.geolocation.getCurrentPosition(position => position.coords)", 
+                                 key="get_location")
+    if location:
+        return location["latitude"], location["longitude"]
+    return None
 
 # Function to get KRL stations from Overpass API
 def get_krl_stations():
@@ -48,4 +48,4 @@ if location:
     else:
         st.error("No KRL stations found in Jakarta dataset.")
 else:
-    st.error("Could not determine your location.")
+    st.error("Waiting for GPS location... Please allow location access.")
