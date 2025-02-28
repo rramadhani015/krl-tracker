@@ -7,11 +7,23 @@ from streamlit_folium import folium_static
 from geopy.distance import geodesic
 
 def get_location():
-    g = geocoder.ip('me')  # Get approximate location from IP
-    if g.latlng:
-        return g.latlng  # Returns (latitude, longitude)
-    else:
-        return None
+    js_code = """
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const { latitude, longitude } = position.coords;
+            document.getElementById("location").value = `${latitude},${longitude}`;
+        }
+    );
+    """
+    location = st.text_input("GPS Location", key="location")
+    st.write("If location doesn't update, allow location access in your browser settings.")
+
+    st.components.v1.html(f'<script>{js_code}</script><input type="hidden" id="location">', height=0)
+
+    if location:
+        lat, lon = map(float, location.split(","))
+        return lat, lon
+    return None
 
 def get_krl_stations():
     overpass_url = "http://overpass-api.de/api/interpreter"
