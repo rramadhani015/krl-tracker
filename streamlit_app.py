@@ -34,16 +34,26 @@ if location and "coords" in location:
             nodes = {}  # Store node coordinates
             railway_tracks = []
     
-            # 🔍 Step 1: Extract Nodes
+            # Step 1: Extract Nodes
             for element in data["elements"]:
                 if element["type"] == "node":
                     nodes[element["id"]] = (element["lat"], element["lon"])
     
-            # 🔍 Debug: Print extracted nodes
-            st.write("Extracted Nodes:", nodes)
+            # 🔍 Step 2: Extract Railway Ways
+            for element in data["elements"]:
+                if element["type"] == "way" and "nodes" in element:
+                    track = [nodes[node_id] for node_id in element["nodes"] if node_id in nodes]
     
-            return nodes  # Return just nodes for now
-        return {}
+                    if len(track) > 1:  # Ensure at least 2 points to draw a line
+                        railway_tracks.append(track)
+    
+            # 🔍 Debugging
+            st.write("Extracted Nodes:", nodes)
+            st.write("Extracted Railway Tracks:", railway_tracks)
+    
+            return railway_tracks
+    return []
+
 
     stations, railway_tracks = get_krl_data()
 
