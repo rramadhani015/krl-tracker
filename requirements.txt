@@ -6,3 +6,4 @@ streamlit_folium
 folium
 geopy
 geocoder
+streamlit_js_eval
