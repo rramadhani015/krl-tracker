@@ -14,7 +14,6 @@ if location and "coords" in location:
     lat, lon = location["coords"]["latitude"], location["coords"]["longitude"]
     st.success(f"Your location: {lat}, {lon}")
 
-    # Fetch KRL stations & relations
     @st.cache_data
     def get_krl_data():
         overpass_url = "http://overpass-api.de/api/interpreter"
@@ -23,7 +22,6 @@ if location and "coords" in location:
         (
             node["railway"="station"]["network"="KAI Commuter"](around:50000,-6.2088,106.8456);
             way["railway"="rail"](around:50000,-6.2088,106.8456);
-            rel["route"="train"]["network"="KAI Commuter"](around:50000,-6.2088,106.8456);
         );
         out body;
         >;
@@ -33,7 +31,7 @@ if location and "coords" in location:
         if response.status_code == 200:
             data = response.json()
             stations = {}
-            railway_lines = []
+            railway_tracks = []
 
             # Extract stations
             for element in data["elements"]:
@@ -41,19 +39,23 @@ if location and "coords" in location:
                     stations[element["id"]] = (
                         element["lat"], element["lon"], element["tags"].get("name", "Unknown Station")
                     )
-            
-            # Extract railway tracks from relations
+
+            # Extract railway tracks (list of node coordinates)
             for element in data["elements"]:
                 if element["type"] == "way" and "nodes" in element:
-                    railway_lines.append([stations[n] for n in element["nodes"] if n in stations])
+                    track = []
+                    for node_id in element["nodes"]:
+                        if node_id in stations:
+                            track.append((stations[node_id][0], stations[node_id][1]))
+                    if len(track) > 1:
+                        railway_tracks.append(track)
 
-            return stations, railway_lines
+            return stations, railway_tracks
         return {}, []
 
-    stations, railway_lines = get_krl_data()
+    stations, railway_tracks = get_krl_data()
 
     if stations:
-        # Find nearest stations
         def find_nearest_stations(lat, lon, stations):
             station_list = list(stations.values())
             sorted_stations = sorted(station_list, key=lambda s: geodesic((lat, lon), (s[0], s[1])).meters)
@@ -72,9 +74,8 @@ if location and "coords" in location:
             folium.Marker([s_lat, s_lon], tooltip=s_name, icon=folium.Icon(color="red")).add_to(m)
 
         # Draw railway tracks
-        for railway in railway_lines:
-            if len(railway) > 1:
-                folium.PolyLine(railway, color="green", weight=3, opacity=0.8).add_to(m)
+        for track in railway_tracks:
+            folium.PolyLine(track, color="green", weight=3, opacity=0.8).add_to(m)
 
         # Show nearest stations
         if len(nearest_stations) == 2:
