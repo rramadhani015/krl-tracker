@@ -1,6 +1,9 @@
 import geocoder
 import requests
 import streamlit as st
+import pandas as pd
+import folium
+from streamlit_folium import folium_static
 from geopy.distance import geodesic
 
 def get_location():
@@ -37,7 +40,7 @@ def is_between_routes(lat, lon, station1, station2):
     station_distance = geodesic((station1[0], station1[1]), (station2[0], station2[1])).meters
     return dist1 + dist2 <= station_distance * 1.1  # Allowing a small margin of error
 
-st.title("KRL Commuterline Tracker")
+st.title("📍 KRL Commuterline Tracker")
 
 location = get_location()
 if location:
@@ -45,6 +48,14 @@ if location:
     stations = get_krl_stations()
     if stations:
         nearest_stations = find_nearest_stations(*location, stations)
+        
+        # Initialize map
+        m = folium.Map(location=location, zoom_start=13)
+        folium.Marker(location, tooltip="You Are Here", icon=folium.Icon(color="blue")).add_to(m)
+        
+        for station in stations:
+            folium.Marker([station[0], station[1]], tooltip=station[2], icon=folium.Icon(color="red")).add_to(m)
+        
         if len(nearest_stations) == 2:
             station1, station2 = nearest_stations
             if is_between_routes(*location, station1, station2):
@@ -55,6 +66,9 @@ if location:
             st.write(f"{station2[2]}: ({station2[0]}, {station2[1]})")
         else:
             st.info(f"Nearest Station: {nearest_stations[0][2]} at ({nearest_stations[0][0]}, {nearest_stations[0][1]})")
+        
+        # Show map
+        folium_static(m)
     else:
         st.error("No KRL stations found in Jakarta dataset.")
 else:
