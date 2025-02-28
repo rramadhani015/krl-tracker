@@ -61,4 +61,12 @@ if location:
         st.error("No KRL stations found in Jakarta dataset.")
 else:
     st.warning("Waiting for GPS location... Please allow location access.")
+    from streamlit_js_eval import get_geolocation
+
+    location = get_geolocation()
+    if location:
+        st.success(f"Your location: {location}")
+    else:
+        st.warning("Waiting for GPS location... Please allow location access.")
+
 
