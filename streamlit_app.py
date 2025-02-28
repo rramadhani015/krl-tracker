@@ -12,12 +12,7 @@ st.title("📍 KRL Commuterline Tracker")
 location = get_geolocation()
 
 if location:
-
-    location = get_geolocation()
-    if location:
-        st.success(f"Your location: {location}")
-    else:
-        st.warning("Waiting for GPS location... Please allow location access.")
+    st.success(f"Your location: {location}")
 
     lat, lon = location["latitude"], location["longitude"]
     st.success(f"Your location: {lat}, {lon}")
