@@ -14,7 +14,7 @@ location = get_geolocation()
 if location:
     st.success(f"Your location: {location}")
 
-    lat, lon = location["LATITUDE"], location["LONGITUDE"]
+    lat, lon = location["coords"]["latitude"], location["coords"]["longitude"]  # ✅ FIXED
     st.success(f"Your location: {lat}, {lon}")
 
     # Fetch KRL stations from Overpass API
