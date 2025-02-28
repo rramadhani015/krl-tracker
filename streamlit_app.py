@@ -3,25 +3,12 @@ import requests
 import folium
 from streamlit_folium import folium_static
 from geopy.distance import geodesic
+from streamlit_js_eval import streamlit_js_eval
 
 def get_location():
-    js_code = """
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            const { latitude, longitude } = position.coords;
-            document.getElementById("location").value = `${latitude},${longitude}`;
-        },
-        (error) => { console.error(error); }
-    );
-    """
-    location = st.text_input("GPS Location", key="location")
-    st.write("If location doesn't update, allow location access in your browser settings.")
-
-    st.components.v1.html(f'<script>{js_code}</script><input type="hidden" id="location">', height=0)
-
+    location = streamlit_js_eval(js_expressions="navigator.geolocation.getCurrentPosition(pos => [pos.coords.latitude, pos.coords.longitude]);", want_output=True)
     if location:
-        lat, lon = map(float, location.split(","))
-        return lat, lon
+        return tuple(location)
     return None
 
 def get_krl_stations():
