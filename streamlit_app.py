@@ -39,20 +39,11 @@ if location and "coords" in location:
                 if element["type"] == "node":
                     nodes[element["id"]] = (element["lat"], element["lon"])
     
-            # 🔍 Step 2: Extract Railway Ways
-            for element in data["elements"]:
-                if element["type"] == "way" and "nodes" in element:
-                    track = [nodes[node_id] for node_id in element["nodes"] if node_id in nodes]
-                    if len(track) > 1:
-                        railway_tracks.append(track)
-    
-            # 🔍 Debugging
+            # 🔍 Debug: Print extracted nodes
             st.write("Extracted Nodes:", nodes)
-            st.write("Extracted Railway Tracks:", railway_tracks)
     
-            return railway_tracks
-        return []
-
+            return nodes  # Return just nodes for now
+        return {}
 
     stations, railway_tracks = get_krl_data()
 
