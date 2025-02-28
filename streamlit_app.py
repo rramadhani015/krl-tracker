@@ -22,6 +22,7 @@ if location and "coords" in location:
         [out:json];
         (
             node["railway"="station"]["network"="KAI Commuter"](around:50000,-6.2088,106.8456);
+            way["railway"="rail"](around:50000,-6.2088,106.8456);
             rel["route"="train"]["network"="KAI Commuter"](around:50000,-6.2088,106.8456);
         );
         out body;
@@ -32,22 +33,24 @@ if location and "coords" in location:
         if response.status_code == 200:
             data = response.json()
             stations = {}
-            train_routes = []
+            railway_lines = []
 
-            # Extract stations & train routes
+            # Extract stations
             for element in data["elements"]:
                 if element["type"] == "node" and "tags" in element:
                     stations[element["id"]] = (
                         element["lat"], element["lon"], element["tags"].get("name", "Unknown Station")
                     )
-                elif element["type"] == "relation":
-                    route_nodes = [member["ref"] for member in element.get("members", []) if member["type"] == "node"]
-                    train_routes.append(route_nodes)
             
-            return stations, train_routes
+            # Extract railway tracks from relations
+            for element in data["elements"]:
+                if element["type"] == "way" and "nodes" in element:
+                    railway_lines.append([stations[n] for n in element["nodes"] if n in stations])
+
+            return stations, railway_lines
         return {}, []
 
-    stations, train_routes = get_krl_data()
+    stations, railway_lines = get_krl_data()
 
     if stations:
         # Find nearest stations
@@ -68,11 +71,10 @@ if location and "coords" in location:
         for station_id, (s_lat, s_lon, s_name) in stations.items():
             folium.Marker([s_lat, s_lon], tooltip=s_name, icon=folium.Icon(color="red")).add_to(m)
 
-        # Draw train route connections from relations
-        for route in train_routes:
-            route_coords = [(stations[n][0], stations[n][1]) for n in route if n in stations]
-            if len(route_coords) > 1:
-                folium.PolyLine(route_coords, color="green", weight=3, opacity=0.8).add_to(m)
+        # Draw railway tracks
+        for railway in railway_lines:
+            if len(railway) > 1:
+                folium.PolyLine(railway, color="green", weight=3, opacity=0.8).add_to(m)
 
         # Show nearest stations
         if len(nearest_stations) == 2:
