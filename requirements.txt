@@ -2,7 +2,7 @@ streamlit
 numpy
 requests
 pydeck
-matplotlib
+streamlit_folium
 folium
 geopy
 geocoder
