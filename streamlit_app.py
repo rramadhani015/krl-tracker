@@ -1,51 +1,74 @@
-import requests
 import streamlit as st
+import requests
 import folium
 from streamlit_folium import folium_static
-from streamlit_js_eval import streamlit_js_eval
+from streamlit_js_eval import get_geolocation
+from geopy.distance import geodesic
 
-# Function to get user's location using JavaScript
-def get_location():
-    location = streamlit_js_eval("navigator.geolocation.getCurrentPosition(position => position.coords)", 
-                                 key="get_location")
-    if location:
-        return location["latitude"], location["longitude"]
-    return None
-
-# Function to get KRL stations from Overpass API
-def get_krl_stations():
-    overpass_url = "http://overpass-api.de/api/interpreter"
-    query = """
-    [out:json];
-    node["railway"="station"]["network"="KAI Commuter"](around:50000,-6.2088,106.8456);
-    out body;
-    """
-    response = requests.get(overpass_url, params={'data': query})
-    
-    if response.status_code == 200:
-        data = response.json()
-        stations = [(node["lat"], node["lon"], node["tags"].get("name", "Unknown Station")) for node in data.get("elements", [])]
-        return stations
-    return []
-
-# Streamlit UI
 st.title("📍 KRL Commuterline Tracker")
 
-location = get_location()
-if location:
-    st.write(f"Your current location: {location}")
-    stations = get_krl_stations()
+# Get real-time GPS location
+location = get_geolocation()
+
+if location and "coords" in location:
+    lat, lon = location["coords"]["latitude"], location["coords"]["longitude"]
+    st.success(f"Your location: {lat}, {lon}")
+
+    @st.cache_data
+    def get_krl_data():
+        overpass_url = "http://overpass-api.de/api/interpreter"
+        query = """
+        [out:json];
+        (
+            node["railway"="station"]["network"="KAI Commuter"](around:50000,-6.2088,106.8456);
+        );
+        out body;
+        >;
+        out skel qt;
+        """
+        response = requests.get(overpass_url, params={'data': query})
+        if response.status_code == 200:
+            data = response.json()
+            stations = {}
+
+            # Extract stations
+            for element in data["elements"]:
+                if element["type"] == "node" and "tags" in element:
+                    stations[element["id"]] = (
+                        element["lat"], element["lon"], element["tags"].get("name", "Unknown Station")
+                    )
+            return stations
+        return {}
+
+    stations = get_krl_data()
+
     if stations:
-        # Initialize map
-        m = folium.Map(location=location, zoom_start=13)
-        folium.Marker(location, tooltip="You Are Here", icon=folium.Icon(color="blue")).add_to(m)
-        
-        for station in stations:
-            folium.Marker([station[0], station[1]], tooltip=station[2], icon=folium.Icon(color="red")).add_to(m)
-        
-        # Show map
+        def find_nearest_stations(lat, lon, stations):
+            station_list = list(stations.values())
+            sorted_stations = sorted(station_list, key=lambda s: geodesic((lat, lon), (s[0], s[1])).meters)
+            return sorted_stations[:2] if len(sorted_stations) > 1 else sorted_stations
+
+        nearest_stations = find_nearest_stations(lat, lon, stations)
+
+        # Create map
+        m = folium.Map(location=[lat, lon], zoom_start=13)
+
+        # Add user location
+        folium.Marker([lat, lon], tooltip="You Are Here", icon=folium.Icon(color="blue")).add_to(m)
+
+        # Add stations
+        for station_id, (s_lat, s_lon, s_name) in stations.items():
+            folium.Marker([s_lat, s_lon], tooltip=s_name, icon=folium.Icon(color="red")).add_to(m)
+
+        # Show nearest stations
+        if len(nearest_stations) == 2:
+            st.success(f"You are between **{nearest_stations[0][2]}** and **{nearest_stations[1][2]}**.")
+        else:
+            st.info(f"Nearest Station: **{nearest_stations[0][2]}**.")
+
         folium_static(m)
+
     else:
-        st.error("No KRL stations found in Jakarta dataset.")
+        st.error("No KRL stations found.")
 else:
-    st.error("Waiting for GPS location... Please allow location access.")
+    st.warning("Waiting for GPS location... Please allow location access.")
