@@ -18,7 +18,7 @@ def get_krl_stations():
     query = """
     [out:json];
         node["railway"="station"]
-        ["network"="KAI Commuter"]
+        # ["network"="KAI Commuter"]
         (around:50000,-6.2088,106.8456);
     out body;
     """
