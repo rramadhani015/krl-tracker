@@ -52,7 +52,7 @@ if location and "coords" in location:
             st.write("Extracted Railway Tracks:", railway_tracks)
     
             return railway_tracks
-    return []
+        return []
 
 
     stations, railway_tracks = get_krl_data()
