@@ -1,96 +1,51 @@
-import streamlit as st
+import geocoder
 import requests
+import streamlit as st
 import folium
 from streamlit_folium import folium_static
-from streamlit_js_eval import get_geolocation
-from geopy.distance import geodesic
 
+# Function to get user's location
+def get_location():
+    g = geocoder.ip('me')  # Get approximate location from IP
+    if g.latlng:
+        return g.latlng  # Returns (latitude, longitude)
+    else:
+        return None
+
+# Function to get KRL stations from Overpass API
+def get_krl_stations():
+    overpass_url = "http://overpass-api.de/api/interpreter"
+    query = """
+    [out:json];
+    node["railway"="station"]["network"="KAI Commuter"](around:50000,-6.2088,106.8456);
+    out body;
+    """
+    response = requests.get(overpass_url, params={'data': query})
+    
+    if response.status_code == 200:
+        data = response.json()
+        stations = [(node["lat"], node["lon"], node["tags"].get("name", "Unknown Station")) for node in data.get("elements", [])]
+        return stations
+    return []
+
+# Streamlit UI
 st.title("📍 KRL Commuterline Tracker")
 
-# Get real-time GPS location
-location = get_geolocation()
-
-if location and "coords" in location:
-    lat, lon = location["coords"]["latitude"], location["coords"]["longitude"]
-    st.success(f"Your location: {lat}, {lon}")
-
-    @st.cache_data
-    def get_krl_data():
-        overpass_url = "http://overpass-api.de/api/interpreter"
-        query = """
-        [out:json];
-        (
-            node["railway"="station"]["network"="KAI Commuter"](around:50000,-6.2088,106.8456);
-            way["railway"="rail"]["network"="KAI Commuter"](around:50000,-6.2088,106.8456);
-        );
-        out body;
-        >;
-        out skel qt;
-        """
-        response = requests.get(overpass_url, params={'data': query})
-    
-        if response.status_code == 200:
-            data = response.json()
-            nodes = {}  # Store node coordinates
-            railway_tracks = []
-    
-            # Step 1: Extract Nodes
-            for element in data["elements"]:
-                if element["type"] == "node":
-                    nodes[element["id"]] = (element["lat"], element["lon"])
-    
-            # 🔍 Step 2: Extract Railway Ways
-            for element in data["elements"]:
-                if element["type"] == "way" and "nodes" in element:
-                    track = [nodes[node_id] for node_id in element["nodes"] if node_id in nodes]
-    
-                    if len(track) > 1:  # Ensure at least 2 points to draw a line
-                        railway_tracks.append(track)
-    
-            # 🔍 Debugging
-            st.write("Extracted Nodes:", nodes)
-            st.write("Extracted Railway Tracks:", railway_tracks)
-    
-            return railway_tracks
-        return []
-
-
-    stations, railway_tracks = get_krl_data()
-
+location = get_location()
+if location:
+    st.write(f"Your current location: {location}")
+    stations = get_krl_stations()
     if stations:
-        def find_nearest_stations(lat, lon, stations):
-            station_list = list(stations.values())
-            sorted_stations = sorted(station_list, key=lambda s: geodesic((lat, lon), (s[0], s[1])).meters)
-            return sorted_stations[:2] if len(sorted_stations) > 1 else sorted_stations
-
-        nearest_stations = find_nearest_stations(lat, lon, stations)
-
-        # Create map
-        m = folium.Map(location=[lat, lon], zoom_start=13)
-
-        # Add user location
-        folium.Marker([lat, lon], tooltip="You Are Here", icon=folium.Icon(color="blue")).add_to(m)
-
-        # Add stations
-        for station_id, (s_lat, s_lon, s_name) in stations.items():
-            folium.Marker([s_lat, s_lon], tooltip=s_name, icon=folium.Icon(color="red")).add_to(m)
-
-        # Draw railway tracks
-        if railway_tracks:
-            for track in railway_tracks:
-                folium.PolyLine(track, color="green", weight=3, opacity=0.8).add_to(m)
-        else:
-            st.warning("No railway tracks detected.")
-
-        # Show nearest stations
-        if len(nearest_stations) == 2:
-            st.success(f"You are between **{nearest_stations[0][2]}** and **{nearest_stations[1][2]}**.")
-        else:
-            st.info(f"Nearest Station: **{nearest_stations[0][2]}**.")
-
+        # Initialize map
+        m = folium.Map(location=location, zoom_start=13)
+        folium.Marker(location, tooltip="You Are Here", icon=folium.Icon(color="blue")).add_to(m)
+        
+        for station in stations:
+            folium.Marker([station[0], station[1]], tooltip=station[2], icon=folium.Icon(color="red")).add_to(m)
+        
+        # Show map
         folium_static(m)
-
     else:
-        st.error("No KRL stations found.")
+        st.error("No KRL stations found in Jakarta dataset.")
 else:
-    st.warning("Waiting for GPS location... Please allow location access.")
+    st.error("Could not determine your location.")
