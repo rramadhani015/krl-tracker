@@ -28,25 +28,18 @@ if location and "coords" in location:
         out skel qt;
         """
         response = requests.get(overpass_url, params={'data': query})
+    
         if response.status_code == 200:
             data = response.json()
-            stations = {}
-            nodes = {}  # Store all nodes
+            nodes = {}  # Store node coordinates
             railway_tracks = []
     
-            # 1️⃣ Extract **all nodes first**
+            # 🔍 Step 1: Extract Nodes
             for element in data["elements"]:
                 if element["type"] == "node":
                     nodes[element["id"]] = (element["lat"], element["lon"])
     
-            # 2️⃣ Extract stations
-            for element in data["elements"]:
-                if element["type"] == "node" and "tags" in element and "name" in element["tags"]:
-                    stations[element["id"]] = (
-                        element["lat"], element["lon"], element["tags"].get("name", "Unknown Station")
-                    )
-    
-            # 3️⃣ Extract railway ways & link them to coordinates
+            # 🔍 Step 2: Extract Railway Ways
             for element in data["elements"]:
                 if element["type"] == "way" and "nodes" in element:
                     track = [nodes[node_id] for node_id in element["nodes"] if node_id in nodes]
@@ -54,10 +47,12 @@ if location and "coords" in location:
                         railway_tracks.append(track)
     
             # 🔍 Debugging
+            st.write("Extracted Nodes:", nodes)
             st.write("Extracted Railway Tracks:", railway_tracks)
     
-            return stations, railway_tracks
-        return {}, []
+            return railway_tracks
+        return []
+
 
     stations, railway_tracks = get_krl_data()
 
