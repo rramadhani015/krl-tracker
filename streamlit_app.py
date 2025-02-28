@@ -20,7 +20,7 @@ if location and "coords" in location:
         query = """
         [out:json];
         (
-            //node["railway"="station"]["network"="KAI Commuter"](around:50000,-6.2088,106.8456);
+            node["railway"="station"]["network"="KAI Commuter"](around:50000,-6.2088,106.8456);
             way["railway"="rail"](around:50000,-6.2088,106.8456);
         );
         out body;
@@ -31,7 +31,7 @@ if location and "coords" in location:
         if response.status_code == 200:
             data = response.json()
             
-            st.write("Overpass Response:", data)
+            # st.write("Overpass Response:", data)
 
             stations = {}
             railway_tracks = []
@@ -77,8 +77,11 @@ if location and "coords" in location:
             folium.Marker([s_lat, s_lon], tooltip=s_name, icon=folium.Icon(color="red")).add_to(m)
 
         # Draw railway tracks
-        for track in railway_tracks:
-            folium.PolyLine(track, color="green", weight=3, opacity=0.8).add_to(m)
+        if railway_tracks:
+            for track in railway_tracks:
+                folium.PolyLine(track, color="green", weight=3, opacity=0.8).add_to(m)
+        else:
+            st.warning("No railway tracks detected.")
 
         # Show nearest stations
         if len(nearest_stations) == 2:
