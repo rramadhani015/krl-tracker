@@ -20,7 +20,7 @@ if location and "coords" in location:
         query = """
         [out:json];
         (
-            # node["railway"="station"]["network"="KAI Commuter"](around:50000,-6.2088,106.8456);
+            //node["railway"="station"]["network"="KAI Commuter"](around:50000,-6.2088,106.8456);
             way["railway"="rail"](around:50000,-6.2088,106.8456);
         );
         out body;
