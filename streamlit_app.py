@@ -14,9 +14,9 @@ if location and "coords" in location:
     lat, lon = location["coords"]["latitude"], location["coords"]["longitude"]
     st.success(f"Your location: {lat}, {lon}")
 
-    # Fetch KRL stations
+    # Fetch KRL stations & relations
     @st.cache_data
-    def get_krl_stations():
+    def get_krl_data():
         overpass_url = "http://overpass-api.de/api/interpreter"
         query = """
         [out:json];
@@ -32,20 +32,22 @@ if location and "coords" in location:
         if response.status_code == 200:
             data = response.json()
             stations = {}
-            ways = []
-            
+            train_routes = []
+
+            # Extract stations & train routes
             for element in data["elements"]:
                 if element["type"] == "node" and "tags" in element:
                     stations[element["id"]] = (
                         element["lat"], element["lon"], element["tags"].get("name", "Unknown Station")
                     )
-                elif element["type"] == "way":
-                    ways.append(element["nodes"])
+                elif element["type"] == "relation":
+                    route_nodes = [member["ref"] for member in element.get("members", []) if member["type"] == "node"]
+                    train_routes.append(route_nodes)
             
-            return stations, ways
+            return stations, train_routes
         return {}, []
 
-    stations, station_relations = get_krl_stations()
+    stations, train_routes = get_krl_data()
 
     if stations:
         # Find nearest stations
@@ -66,9 +68,9 @@ if location and "coords" in location:
         for station_id, (s_lat, s_lon, s_name) in stations.items():
             folium.Marker([s_lat, s_lon], tooltip=s_name, icon=folium.Icon(color="red")).add_to(m)
 
-        # Draw station relations (routes)
-        for way in station_relations:
-            route_coords = [(stations[n][0], stations[n][1]) for n in way if n in stations]
+        # Draw train route connections from relations
+        for route in train_routes:
+            route_coords = [(stations[n][0], stations[n][1]) for n in route if n in stations]
             if len(route_coords) > 1:
                 folium.PolyLine(route_coords, color="green", weight=3, opacity=0.8).add_to(m)
 
