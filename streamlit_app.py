@@ -78,19 +78,20 @@ if location and "coords" in location:
         (
             node["highway"="bus_stop"]["network"="TransJakarta"](around:50000,-6.2088,106.8456);
             way["highway"="busway"](around:50000,-6.2088,106.8456);
+            node(w);
         );
         out body;
         """
         response = requests.get(overpass_url, params={'data': query})
         if response.status_code == 200:
             data = response.json()
-            stops = []
-            routes = []
+            bus_stops = []
+            bus_routes = []
             nodes = {element["id"]: (element["lon"], element["lat"]) for element in data["elements"] if element["type"] == "node"}
 
             for element in data["elements"]:
-                if element["type"] == "node" and "tags" in element and element["tags"].get("highway") == "bus_stop":
-                    stops.append({
+                if element["type"] == "node" and "tags" in element and "name" in element["tags"]:
+                    bus_stops.append({
                         "lat": element["lat"],
                         "lon": element["lon"],
                         "name": element["tags"].get("name", "Unknown Stop")
@@ -98,9 +99,8 @@ if location and "coords" in location:
                 elif element["type"] == "way" and "nodes" in element:
                     route_coords = [[nodes[node_id][0], nodes[node_id][1]] for node_id in element["nodes"] if node_id in nodes]
                     if route_coords:
-                        routes.append({"path": route_coords})
-            
-            return stops, routes
+                        bus_routes.append({"path": route_coords})
+            return bus_stops, bus_routes
         return [], []
 
     if option == "KRL Tracker":
@@ -108,27 +108,25 @@ if location and "coords" in location:
         railway_tracks = get_railway_tracks()
 
         if stations:
-            def find_nearest_stations(lat, lon, stations):
-                sorted_stations = sorted(stations, key=lambda s: geodesic((lat, lon), (s["lat"], s["lon"])))
-                return sorted_stations[:2] if len(sorted_stations) > 1 else sorted_stations
-
-            nearest_stations = find_nearest_stations(lat, lon, stations)
-
-            # Create Pydeck map
+            # Create Pydeck layers
+            station_layer = pdk.Layer("ScatterplotLayer", stations, get_position="[lon, lat]", get_color="[255, 0, 0, 255]", get_radius=120)
+            railway_layer = pdk.Layer("PathLayer", railway_tracks, get_path="path", get_color="[0, 255, 0, 160]", width_scale=20, width_min_pixels=2)
+            user_layer = pdk.Layer("ScatterplotLayer", [{"lat": lat, "lon": lon}], get_position="[lon, lat]", get_color="[0, 0, 255, 255]", get_radius=150)
+            
             view_state = pdk.ViewState(latitude=lat, longitude=lon, zoom=13)
-            layers = [
-                pdk.Layer("PathLayer", data=railway_tracks, get_path="path", get_color="[0, 255, 0, 160]", width_scale=20, width_min_pixels=2),
-                pdk.Layer("ScatterplotLayer", data=stations, get_position="[lon, lat]", get_color="[255, 0, 0, 255]", get_radius=120),
-                pdk.Layer("ScatterplotLayer", data=[{"lat": lat, "lon": lon}], get_position="[lon, lat]", get_color="[0, 0, 255, 255]", get_radius=150)
-            ]
-            st.pydeck_chart(pdk.Deck(layers=layers, initial_view_state=view_state, map_style="mapbox://styles/mapbox/outdoors-v11"))
+            st.pydeck_chart(pdk.Deck(layers=[railway_layer, station_layer, user_layer], initial_view_state=view_state, map_style="mapbox://styles/mapbox/outdoors-v11"))
+        else:
+            st.error("No KRL stations found.")
     elif option == "Tije Tracker":
-        stops, routes = get_tije_data()
-        view_state = pdk.ViewState(latitude=lat, longitude=lon, zoom=13)
-        layers = [
-            pdk.Layer("PathLayer", data=routes, get_path="path", get_color="[255, 165, 0, 160]", width_scale=20, width_min_pixels=2),
-            pdk.Layer("ScatterplotLayer", data=stops, get_position="[lon, lat]", get_color="[255, 0, 0, 255]", get_radius=120)
-        ]
-        st.pydeck_chart(pdk.Deck(layers=layers, initial_view_state=view_state, map_style="mapbox://styles/mapbox/outdoors-v11"))
+        bus_stops, bus_routes = get_tije_data()
+        if bus_stops:
+            bus_stop_layer = pdk.Layer("ScatterplotLayer", bus_stops, get_position="[lon, lat]", get_color="[255, 165, 0, 255]", get_radius=100)
+            bus_route_layer = pdk.Layer("PathLayer", bus_routes, get_path="path", get_color="[255, 165, 0, 160]", width_scale=20, width_min_pixels=2)
+            user_layer = pdk.Layer("ScatterplotLayer", [{"lat": lat, "lon": lon}], get_position="[lon, lat]", get_color="[0, 0, 255, 255]", get_radius=150)
+            
+            view_state = pdk.ViewState(latitude=lat, longitude=lon, zoom=13)
+            st.pydeck_chart(pdk.Deck(layers=[bus_route_layer, bus_stop_layer, user_layer], initial_view_state=view_state, map_style="mapbox://styles/mapbox/outdoors-v11"))
+        else:
+            st.error("No TransJakarta data found.")
 else:
     st.warning("Waiting for GPS location... Please allow location access.")
