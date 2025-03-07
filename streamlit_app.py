@@ -48,22 +48,22 @@ if location and "coords" in location:
         [out:json];
         (
             way["railway"="rail"](around:50000,-6.2088,106.8456);
+            node(w);
         );
         out body;
-        node(w);
-        out skel qt;
         """
         response = requests.get(overpass_url, params={'data': query})
         if response.status_code == 200:
             data = response.json()
-            nodes = {element["id"]: (element["lat"], element["lon"]) for element in data["elements"] if element["type"] == "node"}
+            nodes = {element["id"]: (element["lon"], element["lat"]) for element in data["elements"] if element["type"] == "node"}
             tracks = []
 
             for element in data["elements"]:
                 if element["type"] == "way" and "nodes" in element:
-                    track_coords = [nodes[node_id] for node_id in element["nodes"] if node_id in nodes]
+                    track_coords = [[nodes[node_id][0], nodes[node_id][1]] for node_id in element["nodes"] if node_id in nodes]
                     if track_coords:
-                        tracks.append({"path": track_coords})
+                        tracks.append({"path": track_coords})  # Ensure path is properly formatted
+            
             return tracks
         return []
 
@@ -123,7 +123,6 @@ if location and "coords" in location:
             st.success(f"You are between **{nearest_stations[0]['name']}** and **{nearest_stations[1]['name']}**.")
         else:
             st.info(f"Nearest Station: **{nearest_stations[0]['name']}**.")
-        st.write("Extracted Railway Tracks:", railway_tracks)
     else:
         st.error("No KRL stations found.")
 else:
