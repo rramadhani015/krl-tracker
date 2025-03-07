@@ -1,7 +1,6 @@
 import streamlit as st
 import requests
-import folium
-from streamlit_folium import folium_static
+import pydeck as pdk
 from streamlit_js_eval import get_geolocation
 from geopy.distance import geodesic
 
@@ -29,45 +28,60 @@ if location and "coords" in location:
         response = requests.get(overpass_url, params={'data': query})
         if response.status_code == 200:
             data = response.json()
-            stations = {}
+            stations = []
 
             # Extract stations
             for element in data["elements"]:
                 if element["type"] == "node" and "tags" in element:
-                    stations[element["id"]] = (
-                        element["lat"], element["lon"], element["tags"].get("name", "Unknown Station")
-                    )
+                    stations.append({
+                        "lat": element["lat"],
+                        "lon": element["lon"],
+                        "name": element["tags"].get("name", "Unknown Station")
+                    })
             return stations
-        return {}
+        return []
 
     stations = get_krl_data()
 
     if stations:
         def find_nearest_stations(lat, lon, stations):
-            station_list = list(stations.values())
-            sorted_stations = sorted(station_list, key=lambda s: geodesic((lat, lon), (s[0], s[1])).meters)
+            sorted_stations = sorted(stations, key=lambda s: geodesic((lat, lon), (s["lat"], s["lon"])).meters)
             return sorted_stations[:2] if len(sorted_stations) > 1 else sorted_stations
 
         nearest_stations = find_nearest_stations(lat, lon, stations)
 
-        # Create map
-        m = folium.Map(location=[lat, lon], zoom_start=13)
+        # Create Pydeck layer for stations
+        station_layer = pdk.Layer(
+            "ScatterplotLayer",
+            data=stations,
+            get_position="[lon, lat]",
+            get_color="[255, 0, 0, 160]",
+            get_radius=100,
+            pickable=True,
+            tooltip=True
+        )
 
-        # Add user location
-        folium.Marker([lat, lon], tooltip="You Are Here", icon=folium.Icon(color="blue")).add_to(m)
+        # Create Pydeck layer for user location
+        user_layer = pdk.Layer(
+            "ScatterplotLayer",
+            data=[{"lat": lat, "lon": lon}],
+            get_position="[lon, lat]",
+            get_color="[0, 0, 255, 255]",
+            get_radius=150,
+            pickable=True,
+            tooltip=True
+        )
 
-        # Add stations
-        for station_id, (s_lat, s_lon, s_name) in stations.items():
-            folium.Marker([s_lat, s_lon], tooltip=s_name, icon=folium.Icon(color="red")).add_to(m)
+        # Create Pydeck map
+        view_state = pdk.ViewState(latitude=lat, longitude=lon, zoom=13)
+        r = pdk.Deck(layers=[station_layer, user_layer], initial_view_state=view_state)
+        st.pydeck_chart(r)
 
         # Show nearest stations
         if len(nearest_stations) == 2:
-            st.success(f"You are between **{nearest_stations[0][2]}** and **{nearest_stations[1][2]}**.")
+            st.success(f"You are between **{nearest_stations[0]['name']}** and **{nearest_stations[1]['name']}**.")
         else:
-            st.info(f"Nearest Station: **{nearest_stations[0][2]}**.")
-
-        folium_static(m)
-
+            st.info(f"Nearest Station: **{nearest_stations[0]['name']}**.")
     else:
         st.error("No KRL stations found.")
 else:
