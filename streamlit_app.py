@@ -16,8 +16,6 @@ if location and "coords" in location:
     lat, lon = location["coords"]["latitude"], location["coords"]["longitude"]
     st.success(f"Your location: {lat}, {lon}")
 
-    route_color = [255, 0, 0, 160]  # Single color for all routes
-
     @st.cache_data
     def get_krl_data():
         overpass_url = "http://overpass-api.de/api/interpreter"
@@ -78,7 +76,7 @@ if location and "coords" in location:
                 if element["type"] == "way" and "nodes" in element:
                     track_coords = [[nodes[node_id][0], nodes[node_id][1]] for node_id in element["nodes"] if node_id in nodes]
                     if track_coords:
-                        tracks.append({"path": track_coords, "color": route_color})
+                        tracks.append({"path": track_coords})
             
             return tracks
         return []
@@ -87,7 +85,7 @@ if location and "coords" in location:
 
     if stations:
         station_layer = pdk.Layer("ScatterplotLayer", stations, get_position="[lon, lat]", get_color="[255, 0, 0, 255]", get_radius=120)
-        railway_layer = pdk.Layer("PathLayer", railway_tracks, get_path="path", get_color="color", width_scale=20, width_min_pixels=2)
+        railway_layer = pdk.Layer("PathLayer", railway_tracks, get_path="path", get_color="[100, 100, 100, 160]", width_scale=20, width_min_pixels=2)
         user_layer = pdk.Layer("ScatterplotLayer", [{"lat": lat, "lon": lon}], get_position="[lon, lat]", get_color="[0, 0, 255, 255]", get_radius=150)
         view_state = pdk.ViewState(latitude=lat, longitude=lon, zoom=13)
         st.pydeck_chart(pdk.Deck(layers=[railway_layer, station_layer, user_layer], initial_view_state=view_state, map_style="mapbox://styles/mapbox/outdoors-v11"))
