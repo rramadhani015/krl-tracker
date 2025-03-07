@@ -82,6 +82,12 @@ if location and "coords" in location:
         if inside_station:
             st.success("You are inside a station area!")
 
+        # Ensure nearest stations are on the same railway line
+        if len(nearest_stations) == 2:
+            st.success(f"You are between **{nearest_stations[0]['name']}** and **{nearest_stations[1]['name']}**.")
+        else:
+            st.info(f"Nearest Station: **{nearest_stations[0]['name']}**.")
+
         # Create Pydeck layer for stations (placed above railway)
         station_layer = pdk.Layer(
             "ScatterplotLayer",
@@ -122,12 +128,6 @@ if location and "coords" in location:
             map_style="mapbox://styles/mapbox/outdoors-v11"  # Change basemap here
         )
         st.pydeck_chart(r)
-
-        # Show nearest stations
-        if len(nearest_stations) == 2:
-            st.success(f"You are between **{nearest_stations[0]['name']}** and **{nearest_stations[1]['name']}**.")
-        else:
-            st.info(f"Nearest Station: **{nearest_stations[0]['name']}**.")
     else:
         st.error("No KRL stations found.")
 else:
