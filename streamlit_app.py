@@ -82,11 +82,16 @@ if location and "coords" in location:
         if inside_station:
             st.success("You are inside a station area!")
 
-        # Ensure nearest stations are on the same railway line
-        if len(nearest_stations) == 2:
-            st.success(f"You are between **{nearest_stations[0]['name']}** and **{nearest_stations[1]['name']}**.")
+        # Check if user is on a railway track
+        on_railway = any(any(geodesic((lat, lon), (point[1], point[0])).meters <= 50 for point in track["path"]) for track in railway_tracks)
+        if not on_railway:
+            st.warning("You are outside of the railway zone.")
         else:
-            st.info(f"Nearest Station: **{nearest_stations[0]['name']}**.")
+            # Ensure nearest stations are on the same railway line
+            if len(nearest_stations) == 2:
+                st.success(f"You are between **{nearest_stations[0]['name']}** and **{nearest_stations[1]['name']}**.")
+            else:
+                st.info(f"Nearest Station: **{nearest_stations[0]['name']}**.")
 
         # Create Pydeck layer for stations (placed above railway)
         station_layer = pdk.Layer(
