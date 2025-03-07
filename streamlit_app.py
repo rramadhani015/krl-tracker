@@ -77,13 +77,18 @@ if location and "coords" in location:
 
         nearest_stations = find_nearest_stations(lat, lon, stations)
 
-        # Create Pydeck layer for stations
+        # Check if user is inside a station (100m buffer)
+        inside_station = any(geodesic((lat, lon), (s["lat"], s["lon"])).meters <= 100 for s in stations)
+        if inside_station:
+            st.success("You are inside a station area!")
+
+        # Create Pydeck layer for stations (placed above railway)
         station_layer = pdk.Layer(
             "ScatterplotLayer",
             data=stations,
             get_position="[lon, lat]",
-            get_color="[255, 0, 0, 160]",
-            get_radius=100,
+            get_color="[255, 0, 0, 255]",
+            get_radius=120,
             pickable=True,
             tooltip=True
         )
@@ -112,7 +117,7 @@ if location and "coords" in location:
         # Create Pydeck map with a different basemap
         view_state = pdk.ViewState(latitude=lat, longitude=lon, zoom=13)
         r = pdk.Deck(
-            layers=[station_layer, user_layer, railway_layer],
+            layers=[railway_layer, station_layer, user_layer],  # Ensure railway is drawn first
             initial_view_state=view_state,
             map_style="mapbox://styles/mapbox/outdoors-v11"  # Change basemap here
         )
