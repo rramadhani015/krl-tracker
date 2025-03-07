@@ -3,7 +3,6 @@ import requests
 import pydeck as pdk
 from streamlit_js_eval import get_geolocation
 from geopy.distance import geodesic
-import random
 
 st.title("📍 Public Transport Tracker")
 
@@ -17,8 +16,7 @@ if location and "coords" in location:
     lat, lon = location["coords"]["latitude"], location["coords"]["longitude"]
     st.success(f"Your location: {lat}, {lon}")
 
-    def generate_random_color():
-        return [random.randint(0, 255) for _ in range(3)] + [160]
+    route_color = [255, 0, 0, 160]  # Single color for all routes
 
     @st.cache_data
     def get_krl_data():
@@ -80,7 +78,7 @@ if location and "coords" in location:
                 if element["type"] == "way" and "nodes" in element:
                     track_coords = [[nodes[node_id][0], nodes[node_id][1]] for node_id in element["nodes"] if node_id in nodes]
                     if track_coords:
-                        tracks.append({"path": track_coords, "color": generate_random_color()})
+                        tracks.append({"path": track_coords, "color": route_color})
             
             return tracks
         return []
