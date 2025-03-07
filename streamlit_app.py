@@ -69,7 +69,7 @@ if location and "coords" in location:
 
     if stations:
         def find_nearest_stations(lat, lon, stations):
-            sorted_stations = sorted(stations, key=lambda s: geodesic((lat, lon), (s["lat"], s["lon"]).meters))
+            sorted_stations = sorted(stations, key=lambda s: geodesic((lat, lon), (s["lat"], s["lon"])).meters)
             return sorted_stations[:2] if len(sorted_stations) > 1 else sorted_stations
 
         nearest_stations = find_nearest_stations(lat, lon, stations)
