@@ -72,9 +72,13 @@ if location and "coords" in location:
             tooltip=True
         )
 
-        # Create Pydeck map
+        # Create Pydeck map with a different basemap
         view_state = pdk.ViewState(latitude=lat, longitude=lon, zoom=13)
-        r = pdk.Deck(layers=[station_layer, user_layer], initial_view_state=view_state)
+        r = pdk.Deck(
+            layers=[station_layer, user_layer],
+            initial_view_state=view_state,
+            map_style="mapbox://styles/mapbox/outdoors-v11"  # Change basemap here
+        )
         st.pydeck_chart(r)
 
         # Show nearest stations
