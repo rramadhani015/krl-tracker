@@ -4,7 +4,10 @@ import pydeck as pdk
 from streamlit_js_eval import get_geolocation
 from geopy.distance import geodesic
 
-st.title("📍 KRL Commuterline Tracker")
+st.title("📍 Public Transport Tracker")
+
+# Sidebar menu
+option = st.sidebar.radio("Select Tracker:", ("KRL Tracker", "Tije Tracker"))
 
 # Get real-time GPS location
 location = get_geolocation()
@@ -67,73 +70,76 @@ if location and "coords" in location:
             return tracks
         return []
 
-    stations = get_krl_data()
-    railway_tracks = get_railway_tracks()
+    if option == "KRL Tracker":
+        stations = get_krl_data()
+        railway_tracks = get_railway_tracks()
 
-    if stations:
-        def find_nearest_stations(lat, lon, stations):
-            sorted_stations = sorted(stations, key=lambda s: geodesic((lat, lon), (s["lat"], s["lon"])))
-            return sorted_stations[:2] if len(sorted_stations) > 1 else sorted_stations
+        if stations:
+            def find_nearest_stations(lat, lon, stations):
+                sorted_stations = sorted(stations, key=lambda s: geodesic((lat, lon), (s["lat"], s["lon"])))
+                return sorted_stations[:2] if len(sorted_stations) > 1 else sorted_stations
 
-        nearest_stations = find_nearest_stations(lat, lon, stations)
+            nearest_stations = find_nearest_stations(lat, lon, stations)
 
-        # Check if user is inside a station (100m buffer)
-        inside_station = any(geodesic((lat, lon), (s["lat"], s["lon"])).meters <= 100 for s in stations)
-        if inside_station:
-            st.success("You are inside a station area!")
+            # Check if user is inside a station (100m buffer)
+            inside_station = any(geodesic((lat, lon), (s["lat"], s["lon"])).meters <= 100 for s in stations)
+            if inside_station:
+                st.success("You are inside a station area!")
 
-        # Check if user is on a railway track
-        on_railway = any(any(geodesic((lat, lon), (point[1], point[0])).meters <= 50 for point in track["path"]) for track in railway_tracks)
-        if not on_railway:
-            st.warning("You are outside of the railway zone.")
-        else:
-            # Ensure nearest stations are on the same railway line
-            if len(nearest_stations) == 2:
-                st.success(f"You are between **{nearest_stations[0]['name']}** and **{nearest_stations[1]['name']}**.")
+            # Check if user is on a railway track
+            on_railway = any(any(geodesic((lat, lon), (point[1], point[0])).meters <= 50 for point in track["path"]) for track in railway_tracks)
+            if not on_railway:
+                st.warning("You are outside of the railway zone.")
             else:
-                st.info(f"Nearest Station: **{nearest_stations[0]['name']}**.")
+                # Ensure nearest stations are on the same railway line
+                if len(nearest_stations) == 2:
+                    st.success(f"You are between **{nearest_stations[0]['name']}** and **{nearest_stations[1]['name']}**.")
+                else:
+                    st.info(f"Nearest Station: **{nearest_stations[0]['name']}**.")
 
-        # Create Pydeck layer for stations (placed above railway)
-        station_layer = pdk.Layer(
-            "ScatterplotLayer",
-            data=stations,
-            get_position="[lon, lat]",
-            get_color="[255, 0, 0, 255]",
-            get_radius=120,
-            pickable=True,
-            tooltip=True
-        )
+            # Create Pydeck layer for stations (placed above railway)
+            station_layer = pdk.Layer(
+                "ScatterplotLayer",
+                data=stations,
+                get_position="[lon, lat]",
+                get_color="[255, 0, 0, 255]",
+                get_radius=120,
+                pickable=True,
+                tooltip=True
+            )
 
-        # Create Pydeck layer for user location
-        user_layer = pdk.Layer(
-            "ScatterplotLayer",
-            data=[{"lat": lat, "lon": lon}],
-            get_position="[lon, lat]",
-            get_color="[0, 0, 255, 255]",
-            get_radius=150,
-            pickable=True,
-            tooltip=True
-        )
+            # Create Pydeck layer for user location
+            user_layer = pdk.Layer(
+                "ScatterplotLayer",
+                data=[{"lat": lat, "lon": lon}],
+                get_position="[lon, lat]",
+                get_color="[0, 0, 255, 255]",
+                get_radius=150,
+                pickable=True,
+                tooltip=True
+            )
 
-        # Create Pydeck layer for railway tracks
-        railway_layer = pdk.Layer(
-            "PathLayer",
-            data=railway_tracks,
-            get_path="path",
-            get_color="[0, 255, 0, 160]",
-            width_scale=20,
-            width_min_pixels=2,
-        )
+            # Create Pydeck layer for railway tracks
+            railway_layer = pdk.Layer(
+                "PathLayer",
+                data=railway_tracks,
+                get_path="path",
+                get_color="[0, 255, 0, 160]",
+                width_scale=20,
+                width_min_pixels=2,
+            )
 
-        # Create Pydeck map with a different basemap
-        view_state = pdk.ViewState(latitude=lat, longitude=lon, zoom=13)
-        r = pdk.Deck(
-            layers=[railway_layer, station_layer, user_layer],  # Ensure railway is drawn first
-            initial_view_state=view_state,
-            map_style="mapbox://styles/mapbox/outdoors-v11"  # Change basemap here
-        )
-        st.pydeck_chart(r)
-    else:
-        st.error("No KRL stations found.")
+            # Create Pydeck map with a different basemap
+            view_state = pdk.ViewState(latitude=lat, longitude=lon, zoom=13)
+            r = pdk.Deck(
+                layers=[railway_layer, station_layer, user_layer],  # Ensure railway is drawn first
+                initial_view_state=view_state,
+                map_style="mapbox://styles/mapbox/outdoors-v11"  # Change basemap here
+            )
+            st.pydeck_chart(r)
+        else:
+            st.error("No KRL stations found.")
+    elif option == "Tije Tracker":
+        st.info("Tije Tracker is under development.")
 else:
     st.warning("Waiting for GPS location... Please allow location access.")
