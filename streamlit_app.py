@@ -41,11 +41,35 @@ if location and "coords" in location:
             return stations
         return []
 
+    @st.cache_data
+    def get_railway_tracks():
+        overpass_url = "http://overpass-api.de/api/interpreter"
+        query = """
+        [out:json];
+        (
+            way["railway"="rail"](around:50000,-6.2088,106.8456);
+        );
+        out body;
+        """
+        response = requests.get(overpass_url, params={'data': query})
+        if response.status_code == 200:
+            data = response.json()
+            tracks = []
+
+            for element in data["elements"]:
+                if element["type"] == "way" and "nodes" in element:
+                    track_coords = [(node.get("lat"), node.get("lon")) for node in data["elements"] if node["type"] == "node" and node["id"] in element["nodes"]]
+                    if track_coords:
+                        tracks.append(track_coords)
+            return tracks
+        return []
+
     stations = get_krl_data()
+    railway_tracks = get_railway_tracks()
 
     if stations:
         def find_nearest_stations(lat, lon, stations):
-            sorted_stations = sorted(stations, key=lambda s: geodesic((lat, lon), (s["lat"], s["lon"])).meters)
+            sorted_stations = sorted(stations, key=lambda s: geodesic((lat, lon), (s["lat"], s["lon"]).meters))
             return sorted_stations[:2] if len(sorted_stations) > 1 else sorted_stations
 
         nearest_stations = find_nearest_stations(lat, lon, stations)
@@ -72,10 +96,20 @@ if location and "coords" in location:
             tooltip=True
         )
 
+        # Create Pydeck layer for railway tracks
+        railway_layer = pdk.Layer(
+            "PathLayer",
+            data=[{"path": track} for track in railway_tracks],
+            get_path="path",
+            get_color="[0, 255, 0, 160]",
+            width_scale=20,
+            width_min_pixels=2,
+        )
+
         # Create Pydeck map with a different basemap
         view_state = pdk.ViewState(latitude=lat, longitude=lon, zoom=13)
         r = pdk.Deck(
-            layers=[station_layer, user_layer],
+            layers=[station_layer, user_layer, railway_layer],
             initial_view_state=view_state,
             map_style="mapbox://styles/mapbox/outdoors-v11"  # Change basemap here
         )
