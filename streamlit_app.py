@@ -123,6 +123,7 @@ if location and "coords" in location:
             st.success(f"You are between **{nearest_stations[0]['name']}** and **{nearest_stations[1]['name']}**.")
         else:
             st.info(f"Nearest Station: **{nearest_stations[0]['name']}**.")
+        st.write("Extracted Railway Tracks:", railway_tracks)
     else:
         st.error("No KRL stations found.")
 else:
