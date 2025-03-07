@@ -50,17 +50,20 @@ if location and "coords" in location:
             way["railway"="rail"](around:50000,-6.2088,106.8456);
         );
         out body;
+        node(w);
+        out skel qt;
         """
         response = requests.get(overpass_url, params={'data': query})
         if response.status_code == 200:
             data = response.json()
+            nodes = {element["id"]: (element["lat"], element["lon"]) for element in data["elements"] if element["type"] == "node"}
             tracks = []
 
             for element in data["elements"]:
                 if element["type"] == "way" and "nodes" in element:
-                    track_coords = [(node.get("lat"), node.get("lon")) for node in data["elements"] if node["type"] == "node" and node["id"] in element["nodes"]]
+                    track_coords = [nodes[node_id] for node_id in element["nodes"] if node_id in nodes]
                     if track_coords:
-                        tracks.append(track_coords)
+                        tracks.append({"path": track_coords})
             return tracks
         return []
 
@@ -69,7 +72,7 @@ if location and "coords" in location:
 
     if stations:
         def find_nearest_stations(lat, lon, stations):
-            sorted_stations = sorted(stations, key=lambda s: geodesic((lat, lon), (s["lat"], s["lon"])).meters)
+            sorted_stations = sorted(stations, key=lambda s: geodesic((lat, lon), (s["lat"], s["lon"])))
             return sorted_stations[:2] if len(sorted_stations) > 1 else sorted_stations
 
         nearest_stations = find_nearest_stations(lat, lon, stations)
@@ -99,7 +102,7 @@ if location and "coords" in location:
         # Create Pydeck layer for railway tracks
         railway_layer = pdk.Layer(
             "PathLayer",
-            data=[{"path": track} for track in railway_tracks],
+            data=railway_tracks,
             get_path="path",
             get_color="[0, 255, 0, 160]",
             width_scale=20,
