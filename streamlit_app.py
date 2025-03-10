@@ -7,7 +7,7 @@ from geopy.distance import geodesic
 st.title("📍 Public Transport Tracker")
 
 # Sidebar menu
-option = st.sidebar.radio("Select Tracker:", ("KRL Tracker", "Tije Tracker"))
+option = st.sidebar.radio("Select Tracker:", ("KRL Tracker"))
 
 # Get real-time GPS location
 location = get_geolocation()
@@ -75,48 +75,6 @@ if location and "coords" in location:
             return tracks
         return []
     
-    @st.cache_data
-    def get_busway_data():
-        overpass_url = "http://overpass-api.de/api/interpreter"
-        query = """
-        [out:json];
-        (
-            node["public_transport"="platform"]["bus"="yes"](around:50000,-6.2088,106.8456);
-        );
-        out body;
-        """
-        response = requests.get(overpass_url, params={'data': query})
-        if response.status_code == 200:
-            data = response.json()
-            terminals = []
-            for element in data["elements"]:
-                if element["type"] == "node" and "tags" in element:
-                    terminals.append({
-                        "lat": element["lat"],
-                        "lon": element["lon"],
-                        "name": element["tags"].get("name", "Unknown Terminal")
-                    })
-            return terminals
-        return []
-    
-    busway_terminals = get_busway_data()
-    st.write(f"Found {len(busway_terminals)} busway terminals.")
-    
-    # Show nearest terminal
-    nearest_terminal, terminal_distance = find_nearest_station(lat, lon, busway_terminals)
-    if nearest_terminal:
-        st.info(f"Nearest Busway Terminal: {nearest_terminal['name']} ({terminal_distance:.2f} meters away)")
-    
-    # Display bus stops on the map
-    busway_terminal_layer = pdk.Layer(
-        "ScatterplotLayer", 
-        busway_terminals, 
-        get_position="[lon, lat]", 
-        get_color="[255, 165, 0, 255]", 
-        get_radius=120
-    )
-    
-
     user_layer = pdk.Layer("ScatterplotLayer", [{"lat": lat, "lon": lon}], get_position="[lon, lat]", get_color="[0, 0, 255, 255]", get_radius=150)
     
     if option == "KRL Tracker":
@@ -129,18 +87,12 @@ if location and "coords" in location:
         
         station_layer = pdk.Layer("ScatterplotLayer", stations, get_position="[lon, lat]", get_color="[255, 0, 0, 255]", get_radius=120)
         railway_layer = pdk.Layer("PathLayer", railway_tracks, get_path="path", get_color="[100, 100, 100, 160]", width_scale=20, width_min_pixels=2)
-    
-    elif option == "Tije Tracker":
-        busway_routes = get_busway_data()
-        busway_layer = pdk.Layer("PathLayer", busway_routes, get_path="path", get_color="[255, 165, 0, 160]", width_scale=20, width_min_pixels=2)
-    
+        
     view_state = pdk.ViewState(latitude=lat, longitude=lon, zoom=13)
     layers = [user_layer]
     
     if option == "KRL Tracker":
         layers.extend([railway_layer, station_layer])
-    elif option == "Tije Tracker":
-        layers.append(busway_terminal_layer)
     
     st.pydeck_chart(pdk.Deck(layers=layers, initial_view_state=view_state, map_style="mapbox://styles/mapbox/outdoors-v11"))
 else:
