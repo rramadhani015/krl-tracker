@@ -4,7 +4,7 @@ import pydeck as pdk
 from streamlit_js_eval import get_geolocation
 from geopy.distance import geodesic
 
-st.title("\ud83d\udccd Public Transport Tracker")
+st.title("📍 Public Transport Tracker")
 
 # Sidebar menu
 option = st.sidebar.radio("Select Tracker:", ("KRL Tracker"))
