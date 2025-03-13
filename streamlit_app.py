@@ -85,27 +85,25 @@ if location and "coords" in location:
         if nearest_station:
             st.info(f"Nearest Station: {nearest_station['name']} ({distance:.2f} meters away)")
         
-        station_layer = pdk.Layer("ScatterplotLayer", stations, get_position="[lon, lat]", get_color="[255, 0, 0, 255]", get_radius=120)
+        station_layer = pdk.Layer(
+            "ScatterplotLayer", 
+            stations, 
+            get_position="[lon, lat]", 
+            get_color="[255, 0, 0, 255]", 
+            get_radius=120,
+            pickable=True,
+            tooltip=True
+        )
         railway_layer = pdk.Layer("PathLayer", railway_tracks, get_path="path", get_color="[100, 100, 100, 160]", width_scale=20, width_min_pixels=2)
         
-        text_layer = pdk.Layer(
-            "TextLayer",
-            stations,
-            get_position="[lon, lat]",
-            get_text="name",
-            get_size=16,
-            get_color=[0, 0, 0],
-            get_angle=0,
-            get_text_anchor="middle",
-            get_alignment_baseline="center"
-        )
+        tooltip = {"html": "<b>Station:</b> {name}", "style": {"backgroundColor": "white", "color": "black"}}
         
     view_state = pdk.ViewState(latitude=lat, longitude=lon, zoom=13)
     layers = [user_layer]
     
     if option == "KRL Tracker":
-        layers.extend([railway_layer, station_layer, text_layer])
+        layers.extend([railway_layer, station_layer])
     
-    st.pydeck_chart(pdk.Deck(layers=layers, initial_view_state=view_state, map_style="mapbox://styles/mapbox/outdoors-v11"))
+    st.pydeck_chart(pdk.Deck(layers=layers, initial_view_state=view_state, map_style="mapbox://styles/mapbox/outdoors-v11", tooltip=tooltip))
 else:
     st.warning("Waiting for GPS location... Please allow location access.")
