@@ -4,7 +4,7 @@ import pydeck as pdk
 from streamlit_js_eval import get_geolocation
 from geopy.distance import geodesic
 
-st.title("📍 Public Transport Tracker")
+st.title("\ud83d\udccd Public Transport Tracker")
 
 # Sidebar menu
 option = st.sidebar.radio("Select Tracker:", ("KRL Tracker"))
@@ -45,8 +45,8 @@ if location and "coords" in location:
     def find_nearest_station(user_lat, user_lon, stations):
         if not stations:
             return None, None
-        nearest_station = min(stations, key=lambda s: geodesic((user_lat, user_lon), (s["lat"], s["lon"]).meters))
-        distance = geodesic((user_lat, user_lon), (nearest_station["lat"], nearest_station["lon"]).meters)
+        nearest_station = min(stations, key=lambda s: geodesic((user_lat, user_lon), (s["lat"], s["lon"])).meters)
+        distance = geodesic((user_lat, user_lon), (nearest_station["lat"], nearest_station["lon"])).meters
         return nearest_station, distance
 
     @st.cache_data
@@ -88,22 +88,23 @@ if location and "coords" in location:
         station_layer = pdk.Layer("ScatterplotLayer", stations, get_position="[lon, lat]", get_color="[255, 0, 0, 255]", get_radius=120)
         railway_layer = pdk.Layer("PathLayer", railway_tracks, get_path="path", get_color="[100, 100, 100, 160]", width_scale=20, width_min_pixels=2)
         
-        station_label_layer = pdk.Layer(
+        text_layer = pdk.Layer(
             "TextLayer",
             stations,
             get_position="[lon, lat]",
             get_text="name",
             get_size=16,
-            get_color="[0, 0, 0, 255]",
+            get_color=[0, 0, 0],
             get_angle=0,
-            pickable=True
+            get_text_anchor="middle",
+            get_alignment_baseline="center"
         )
         
     view_state = pdk.ViewState(latitude=lat, longitude=lon, zoom=13)
     layers = [user_layer]
     
     if option == "KRL Tracker":
-        layers.extend([railway_layer, station_layer, station_label_layer])
+        layers.extend([railway_layer, station_layer, text_layer])
     
     st.pydeck_chart(pdk.Deck(layers=layers, initial_view_state=view_state, map_style="mapbox://styles/mapbox/outdoors-v11"))
 else:
