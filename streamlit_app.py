@@ -57,7 +57,7 @@ if location and "coords" in location:
             node(w);
         );
         out body;
-        ";
+        """;
         response = requests.get(overpass_url, params={'data': query})
         if response.status_code == 200:
             data = response.json()
