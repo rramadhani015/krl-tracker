@@ -25,7 +25,9 @@ if location and "coords" in location:
             node["railway"="station"]["network"="KAI Commuter"](around:50000,-6.2088,106.8456);
         );
         out body;
-        ";
+        >;
+        out skel qt;
+        """
         response = requests.get(overpass_url, params={'data': query})
         if response.status_code == 200:
             data = response.json()
@@ -43,21 +45,21 @@ if location and "coords" in location:
     def find_nearest_station(user_lat, user_lon, stations):
         if not stations:
             return None, None
-        nearest_station = min(stations, key=lambda s: geodesic((user_lat, user_lon), (s["lat"], s["lon"])).meters)
-        distance = geodesic((user_lat, user_lon), (nearest_station["lat"], nearest_station["lon"])).meters
+        nearest_station = min(stations, key=lambda s: geodesic((user_lat, user_lon), (s["lat"], s["lon"]).meters))
+        distance = geodesic((user_lat, user_lon), (nearest_station["lat"], nearest_station["lon"]).meters)
         return nearest_station, distance
 
     @st.cache_data
     def get_railway_tracks():
         overpass_url = "http://overpass-api.de/api/interpreter"
-        query = f"""
+        query = """
         [out:json];
         (
             way["railway"="rail"](around:50000,-6.2088,106.8456);
             node(w);
         );
         out body;
-        ";
+        """
         response = requests.get(overpass_url, params={'data': query})
         if response.status_code == 200:
             data = response.json()
@@ -84,26 +86,24 @@ if location and "coords" in location:
             st.info(f"Nearest Station: {nearest_station['name']} ({distance:.2f} meters away)")
         
         station_layer = pdk.Layer("ScatterplotLayer", stations, get_position="[lon, lat]", get_color="[255, 0, 0, 255]", get_radius=120)
+        railway_layer = pdk.Layer("PathLayer", railway_tracks, get_path="path", get_color="[100, 100, 100, 160]", width_scale=20, width_min_pixels=2)
         
-        station_text_layer = pdk.Layer(
+        station_label_layer = pdk.Layer(
             "TextLayer",
             stations,
             get_position="[lon, lat]",
             get_text="name",
-            get_size=18,
-            get_color=[255, 255, 255],
+            get_size=16,
+            get_color="[0, 0, 0, 255]",
             get_angle=0,
-            anchor="middle",
-            alignment_baseline="bottom"
+            pickable=True
         )
         
-        railway_layer = pdk.Layer("PathLayer", railway_tracks, get_path="path", get_color="[100, 100, 100, 160]", width_scale=20, width_min_pixels=2)
-    
     view_state = pdk.ViewState(latitude=lat, longitude=lon, zoom=13)
     layers = [user_layer]
     
     if option == "KRL Tracker":
-        layers.extend([railway_layer, station_layer, station_text_layer])
+        layers.extend([railway_layer, station_layer, station_label_layer])
     
     st.pydeck_chart(pdk.Deck(layers=layers, initial_view_state=view_state, map_style="mapbox://styles/mapbox/outdoors-v11"))
 else:
