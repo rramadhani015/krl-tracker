@@ -50,7 +50,7 @@ if location and "coords" in location:
     @st.cache_data
     def get_railway_tracks():
         overpass_url = "http://overpass-api.de/api/interpreter"
-        query = """
+        query = f"""
         [out:json];
         (
             way["railway"="rail"](around:50000,-6.2088,106.8456);
